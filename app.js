@@ -741,6 +741,16 @@
   // refresh when you come back to the tab so arya's decisions and teammates' entries show up
   document.addEventListener('visibilitychange', function () { if (!document.hidden && me) load(); });
 
+  // ---------- theme: light by default, dark on request (remembered on this device) ----------
+  function setTheme(t) {
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
+    if (t === 'dark') store.set('inv.theme', 'dark'); else store.del('inv.theme');
+    var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = t === 'dark' ? '#0B091F' : '#FFFFFF';
+    $$('[data-theme-set]').forEach(function (b) { var on = b.dataset.themeSet === t; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  }
+  $$('[data-theme-set]').forEach(function (b) { b.addEventListener('click', function () { setTheme(b.dataset.themeSet); }); });
+  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+
   $('date').value = today();
   $('xdate').value = today();
   setHours(0);

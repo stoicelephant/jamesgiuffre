@@ -3,25 +3,57 @@
    primary blue for actions, #EAEDFF type. Square-edged and rule-based rather than rounded cards.
    Aeonik (Geist stand-in): body regular, subheads medium, headlines + CTAs bold. Logos from /brand. */
 :root{
-  --ink:#0B091F;          /* fomo ink: page field */
-  --navy:#221D4B;         /* brand navy: halo, raised surfaces */
+  /* brand constants */
   --blue:#516AF6;         /* primary blue: actions, data */
   --electric:#4A36FF;     /* secondary blue: small accents only */
-  --glow:#ACB8F9;         /* light blue: highlights on dark */
-  --text:#EAEDFF;         /* brand white */
+  --r:3px;
+  --font:"Aeonik","Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+
+  /* light theme (default): white field, fomo ink type, blue accents, blue logo */
+  --ink:#FFFFFF;          /* page field */
+  --text:#0B091F;         /* fomo ink */
+  --navy:#EAEDFF;         /* soft brand surface (pale lavender) */
+  --glow:#516AF6;         /* accent text */
+  --muted:#5B5E80;
+  --faint:#8A8DAD;
+  --surface:#F6F7FF;
+  --field:#FFFFFF;
+  --pop:#FFFFFF;
+  --line:rgba(11,9,31,.08);
+  --line-strong:rgba(11,9,31,.16);
+  --hover:rgba(81,106,246,.05);
+  --track:#EEF0FB;
+  --bar:rgba(255,255,255,.88);
+  --glass:#FFFFFF;
+  --halo:radial-gradient(ellipse 60% 420px at 50% -80px,rgba(234,237,255,1),rgba(234,237,255,0) 100%);
+  --signin-bg:linear-gradient(180deg,#4E65F5 0%,#5A71F6 40%,#8496F7 80%,#ACB8F9 100%);
+  --scheme:light;
+}
+/* dark theme: fomo ink field, navy halo, white logo */
+:root[data-theme="dark"]{
+  --ink:#0B091F;
+  --text:#EAEDFF;
+  --navy:#221D4B;
+  --glow:#ACB8F9;
   --muted:#9C9EC4;
   --faint:#686A92;
   --surface:#110F29;
   --field:#15133A;
+  --pop:#16143A;
   --line:rgba(234,237,255,.09);
   --line-strong:rgba(234,237,255,.18);
-  --r:3px;
-  --font:"Aeonik","Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --hover:rgba(234,237,255,.03);
+  --track:rgba(234,237,255,.06);
+  --bar:rgba(11,9,31,.86);
+  --glass:rgba(11,9,31,.72);
+  --halo:radial-gradient(ellipse 60% 420px at 50% -80px,rgba(34,29,75,.95),rgba(34,29,75,0) 100%);
+  --signin-bg:radial-gradient(ellipse 80% 55% at 50% 108%,rgba(81,106,246,.75),rgba(81,106,246,0) 72%),linear-gradient(180deg,#141134 0%,#221D4B 60%,#29286A 100%);
+  --scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;background:var(--ink)}
 body{background:var(--ink);color:var(--text);font:400 15px/1.5 var(--font);-webkit-font-smoothing:antialiased;min-height:100vh;
-  background-image:radial-gradient(ellipse 60% 420px at 50% -80px,rgba(34,29,75,.95),rgba(34,29,75,0) 100%);background-repeat:no-repeat}
+  background-image:var(--halo);background-repeat:no-repeat;color-scheme:var(--scheme)}
 button,input,textarea,select{font:inherit;color:inherit}
 [hidden]{display:none !important}
 a{color:var(--glow)}
@@ -34,7 +66,7 @@ a{color:var(--glow)}
 .btn.primary:hover:not(:disabled){background:#5E75F7}
 .btn.primary.armed{background:var(--electric)}
 .btn.light{background:var(--text);color:var(--ink)}
-.btn.light:hover{background:#fff}
+.btn.light:hover{opacity:.88}
 .btn.ghost-light,.btn.ghost{background:transparent;color:var(--text);border-color:var(--line-strong)}
 .btn.ghost-light:hover,.btn.ghost:hover{border-color:var(--text)}
 .btn.ghost.armed{border-color:var(--electric);color:var(--glow)}
@@ -52,11 +84,23 @@ a{color:var(--glow)}
 .lk-team{margin-left:12px;padding-left:12px;border-left:1px solid var(--line-strong);color:var(--muted);font-weight:500;font-size:14px;line-height:1.1}
 .lockup-white .lk-eyes{height:80px;width:80px;margin-right:4px}
 .lockup-white .lk-word{height:42px;width:auto;display:block}
+/* logo color follows the background: blue on light, white on dark */
+:root:not([data-theme="dark"]) .on-dark{display:none !important}
+:root[data-theme="dark"] .on-light{display:none !important}
+
+/* theme toggle */
+.theme-toggle{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--r);overflow:hidden}
+.theme-toggle button{border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:500;padding:5px 9px;cursor:pointer;line-height:1.2}
+.theme-toggle button:hover{color:var(--text)}
+.theme-toggle button.on{background:var(--text);color:var(--ink)}
+.signin .theme-toggle{position:absolute;top:18px;right:18px;border-color:rgba(234,237,255,.4)}
+.signin .theme-toggle button{color:rgba(234,237,255,.8)}
+.signin .theme-toggle button.on{background:#EAEDFF;color:#0B091F}
 
 /* ---------- sign in (midnight) ---------- */
-.signin{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:24px;
-  background:radial-gradient(ellipse 80% 55% at 50% 108%,rgba(81,106,246,.75),rgba(81,106,246,0) 72%),linear-gradient(180deg,#141134 0%,var(--navy) 60%,#29286A 100%)}
-.signin-card{width:100%;max-width:380px;background:rgba(11,9,31,.72);border:1px solid var(--line-strong);border-radius:var(--r);padding:26px 24px 20px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.signin{position:relative;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:24px;
+  background:var(--signin-bg)}
+.signin-card{width:100%;max-width:380px;background:var(--glass);border:1px solid var(--line-strong);border-radius:var(--r);padding:26px 24px 20px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .signin-kicker{font-size:12px;font-weight:500;color:var(--glow);text-transform:uppercase;letter-spacing:.12em}
 .signin-card h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:6px 0 18px}
 .signin-card .btn{margin-top:12px}
@@ -67,14 +111,14 @@ a{color:var(--glow)}
 .combo input{width:100%;border:1px solid var(--line-strong);border-radius:var(--r);padding:12px 13px;background:var(--field);outline:none;font-size:16px}
 .combo input:focus{border-color:var(--blue)}
 .combo input::placeholder{color:var(--faint)}
-.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;list-style:none;background:#16143A;border:1px solid var(--line-strong);border-radius:var(--r);padding:4px 0;box-shadow:0 18px 40px -12px rgba(0,0,0,.6)}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;list-style:none;background:var(--pop);border:1px solid var(--line-strong);border-radius:var(--r);padding:4px 0;box-shadow:0 18px 40px -12px rgba(11,9,31,.35)}
 .combo-list li{padding:9px 13px;cursor:pointer}
-.combo-list li.on,.combo-list li:hover{background:rgba(81,106,246,.22)}
+.combo-list li.on,.combo-list li:hover{background:rgba(81,106,246,.16)}
 .combo-list li mark{background:none;color:var(--glow);font-weight:700}
 .combo-list li.none{color:var(--muted);cursor:default;background:none}
 
 /* ---------- shell ---------- */
-.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:28px;padding:0 32px;height:60px;background:rgba(11,9,31,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:28px;padding:0 32px;height:60px;background:var(--bar);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;align-self:stretch}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{border:0;background:none;padding:0 14px;color:var(--muted);cursor:pointer;font-weight:500;white-space:nowrap;position:relative;height:100%}
@@ -131,7 +175,7 @@ body:not(.is-admin) .admin-only{display:none !important}
 .bars{display:flex;flex-direction:column;gap:12px}
 .bar-row{display:grid;grid-template-columns:96px 1fr 88px;align-items:center;gap:12px;font-size:14px}
 .bar-row .amt{text-align:right;font-variant-numeric:tabular-nums}
-.bar-track{height:8px;background:rgba(234,237,255,.06)}
+.bar-track{height:8px;background:var(--track)}
 .bar-fill{height:100%;background:var(--blue);border-radius:0 2px 2px 0;min-width:3px;transition:width .4s ease}
 .bar-row:hover .bar-fill{background:var(--glow)}
 
@@ -164,7 +208,7 @@ body:not(.is-admin) .admin-only{display:none !important}
 .field textarea{resize:none;overflow:hidden;line-height:1.5;height:44px;min-height:44px}
 .field input::placeholder,.field textarea::placeholder{color:var(--faint)}
 .field input:focus,.field textarea:focus,.money-in:focus-within{border-color:var(--blue)}
-.field input[type=date]{color-scheme:dark}
+.field input[type=date]{color-scheme:var(--scheme)}
 .money-in{display:flex;align-items:center;gap:4px}
 .money-in b{font-weight:500;color:var(--muted)}
 .money-in input{border:0;padding:0;height:auto;background:transparent;width:100%;font-variant-numeric:tabular-nums}
@@ -223,7 +267,7 @@ body:not(.is-admin) .admin-only{display:none !important}
 .tbl .chk{width:30px}
 .tbl input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer}
 .tbl.team tbody tr{cursor:pointer}
-.tbl.team tbody tr:hover td{background:rgba(234,237,255,.03)}
+.tbl.team tbody tr:hover td{background:var(--hover)}
 .tbl.team tbody tr.on td{background:rgba(81,106,246,.12)}
 .tbl.team td:first-child,.tbl.team th:first-child{padding-left:10px}
 .show-sm{display:none !important}
@@ -243,7 +287,7 @@ body:not(.is-admin) .admin-only{display:none !important}
 .pill::before{content:"";width:7px;height:7px;flex:none}
 .pill.draft{color:var(--muted)}
 .pill.draft::before{border:1px solid var(--muted)}
-.pill.pending::before{background:var(--glow)}
+.pill.pending::before{background:#ACB8F9}
 .pill.approved::before{background:var(--blue)}
 .pill.paid{color:var(--text)}
 .pill.paid::before{background:var(--text)}
@@ -294,6 +338,7 @@ body:not(.is-admin) .admin-only{display:none !important}
   .topbar{flex-wrap:wrap;gap:0 10px;padding:10px 16px 0;height:auto}
   .tabs{order:3;flex-basis:100%;margin:6px -16px 0;padding:0 6px;height:42px}
   .me{margin-left:auto}
+  .me .theme-toggle button{padding:4px 7px}
   .lockup-white .lk-eyes{height:62px;width:62px}
   .lockup-white .lk-word{height:32px}
   .main{padding:24px 16px 60px}

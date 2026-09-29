@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>fomo team</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0B091F">
+<meta name="theme-color" content="#FFFFFF">
+<script>try{if(localStorage.getItem("inv.theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="icon" href="/brand/app-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/brand/app-icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +18,7 @@
 
 <!-- sign in -->
 <div id="signin" class="signin" hidden>
+  <div class="theme-toggle" role="group" aria-label="theme"><button type="button" data-theme-set="light">light</button><button type="button" data-theme-set="dark">dark</button></div>
   <div class="lockup lockup-white" aria-label="fomo">
     <img src="/brand/eyes-white.svg" alt="" class="lk-eyes"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word">
   </div>
@@ -39,7 +41,8 @@
 <div id="shell" class="shell" hidden>
   <header class="topbar">
     <a class="lockup lockup-top" href="#overview" aria-label="fomo team home">
-      <img src="/brand/eyes-white.svg" alt="" class="lk-eyes"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word"><span class="lk-team">team</span>
+      <img src="/brand/eyes-blue.svg" alt="" class="lk-eyes on-light"><img src="/brand/wordmark-blue.svg" alt="fomo" class="lk-word on-light">
+      <img src="/brand/eyes-white.svg" alt="" class="lk-eyes on-dark"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word on-dark"><span class="lk-team">team</span>
     </a>
     <nav class="tabs" id="tabs" aria-label="sections">
       <button type="button" data-view="overview">overview</button>
@@ -49,6 +52,7 @@
       <button type="button" data-view="team" class="admin-only">team</button>
     </nav>
     <div class="me">
+      <div class="theme-toggle" role="group" aria-label="theme"><button type="button" data-theme-set="light">light</button><button type="button" data-theme-set="dark">dark</button></div>
       <span class="avatar" id="me-avatar"></span>
       <span id="me-name"></span>
       <button type="button" class="link" id="switch">switch</button>
