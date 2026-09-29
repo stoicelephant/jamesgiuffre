@@ -1,21 +1,41 @@
-// videos: autoplay muted + loop; tap a video (or its label) to turn its sound on, only one at a time
+// videos: demo 1 autoplays muted (tap for sound); the others wait for a tap and play with sound.
+// only one video makes sound at a time.
 (function () {
   var vids = [].slice.call(document.querySelectorAll('.vid video'));
-  function setSound(v, on) {
-    v.muted = !on;
-    var b = v.parentNode.querySelector('.sound');
-    if (b) { b.textContent = on ? 'sound on' : 'sound off'; b.setAttribute('aria-label', on ? 'turn sound off' : 'turn sound on'); b.classList.toggle('on', on); }
-    if (on) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  function label(v) {
+    var b = v.parentNode.querySelector('.sound'); if (!b) return;
+    var manual = !v.hasAttribute('autoplay');
+    var txt, aria;
+    if (manual && v.paused) { txt = '▶ play'; aria = 'play video'; }
+    else if (manual) { txt = '❚❚ pause'; aria = 'pause video'; }
+    else { txt = v.muted ? 'sound off' : 'sound on'; aria = v.muted ? 'turn sound on' : 'turn sound off'; }
+    b.textContent = txt; b.setAttribute('aria-label', aria);
+    b.classList.toggle('on', !v.muted && !v.paused);
+  }
+  function play(v) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  function quietOthers(v) {
+    vids.forEach(function (o) {
+      if (o === v) return;
+      if (o.hasAttribute('autoplay')) o.muted = true; else o.pause();
+      label(o);
+    });
   }
   vids.forEach(function (v) {
     function toggle() {
-      var on = v.muted;
-      vids.forEach(function (o) { if (o !== v) setSound(o, false); });
-      setSound(v, on);
+      if (v.hasAttribute('autoplay')) {
+        if (v.muted) quietOthers(v);
+        v.muted = !v.muted; play(v);
+      } else {
+        if (v.paused) { quietOthers(v); v.muted = false; play(v); } else v.pause();
+      }
+      label(v);
     }
     v.addEventListener('click', toggle);
+    v.addEventListener('play', function () { label(v); });
+    v.addEventListener('pause', function () { label(v); });
     var b = v.parentNode.querySelector('.sound');
     if (b) b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    label(v);
   });
 })();
 
