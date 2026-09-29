@@ -233,15 +233,34 @@
     $('hours').textContent = fmtH(hours);
     updatePreview();
   }
-  // start time snaps to 15-minute steps
-  function startVal() {
-    var v = $('start').value; if (!v) return '';
-    var p = v.split(':'), m = Math.round(((+p[0]) * 60 + (+p[1])) / 15) * 15 % 1440;
-    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  // understands "1p", "1pm", "1:30p", "130p", "9", "930", "13:00", "noon", "midnight".
+  // no am/pm: 7-11 means morning, 12-6 means afternoon (work hours). snaps to 15 minutes.
+  // returns "HH:MM" (24h), '' if empty, or null if it can't be read.
+  function parseTime(v) {
+    var s = String(v || '').trim().toLowerCase().replace(/\s+/g, '').replace(/\./g, '');
+    if (!s) return '';
+    if (s === 'noon') s = '12p'; if (s === 'midnight') s = '12a';
+    var m = s.match(/^(\d{1,2})(?::?(\d{2}))?(a|am|p|pm)?$/);
+    if (!m) return null;
+    var h = +m[1], min = m[2] ? +m[2] : 0, ap = m[3] ? m[3][0] : '';
+    if (min > 59) return null;
+    if (ap) { if (h < 1 || h > 12) return null; if (ap === 'p' && h !== 12) h += 12; if (ap === 'a' && h === 12) h = 0; }
+    else if (h > 23) return null;
+    else if (h >= 1 && h <= 6) h += 12;                     // "3" means 3pm
+    var t = Math.round((h * 60 + min) / 15) * 15 % 1440;
+    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
   }
+  function niceTime(hhmm) {                                 // "13:00" -> "1:00 pm"
+    var p = hhmm.split(':'), h = +p[0], h12 = h % 12 || 12;
+    return h12 + ':' + p[1] + ' ' + (h < 12 ? 'am' : 'pm');
+  }
+  function startVal() { return parseTime($('start').value) || ''; }
   function updateRange() {
-    var st = startVal(), rp = $('range-preview');
-    rp.textContent = st && hours ? fmtRange(st, hours) : '';
+    var raw = $('start').value, st = parseTime(raw), rp = $('range-preview');
+    rp.classList.toggle('bad', st === null);
+    if (st === null) { rp.textContent = "try 1p or 9:30a"; return; }
+    if (!st) { rp.textContent = ''; return; }
+    rp.textContent = hours ? fmtRange(st, hours) : 'starts ' + niceTime(st).replace(':00', '');
   }
   function updatePreview() {
     updateRange();
@@ -334,7 +353,8 @@
   });
   $('clear-time').addEventListener('click', function () { setHours(0); $('start').value = ''; updateRange(); });
   $('start').addEventListener('input', updateRange);
-  $('start').addEventListener('change', function () { var s = startVal(); if (s) $('start').value = s; updateRange(); });
+  $('start').addEventListener('blur', function () { var s = parseTime($('start').value); if (s) $('start').value = niceTime(s); updateRange(); });
+  $('start').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('start').blur(); } });
 
   $('matter').addEventListener('input', grow);
   $('matter').addEventListener('keydown', function (e) {           // enter adds the entry, shift+enter = new line
@@ -348,6 +368,7 @@
     if (!date) { msg('pick a date.', true); return; }
     if (!matter) { msg('add the subject matter.', true); $('matter').focus(); return; }
     if (!hours) { msg('add some time.', true); return; }
+    if (parseTime($('start').value) === null) { msg("couldn't read that start time, try 1p or 9:30a.", true); $('start').focus(); return; }
     var btn = $('add'); btn.disabled = true; msg('saving…');
     var h = hours;
     var st = startVal();
