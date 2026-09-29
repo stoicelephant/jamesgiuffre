@@ -174,7 +174,7 @@
       ['expenses', money0(spent), X.length + (X.length === 1 ? ' expense' : ' expenses')],
       ['owed to you', money0(owedToMe()), 'across all months']
     ].forEach(function (s) {
-      var d = el('div', 'stat'); d.appendChild(el('div', 'k', s[0])); d.appendChild(el('div', 'v', s[1])); d.appendChild(el('div', 's', s[2])); stats.appendChild(d);
+      var d = el('div', 'stat' + (s[0] === 'owed to you' ? ' accent' : '')); d.appendChild(el('div', 'k', s[0])); d.appendChild(el('div', 'v', s[1])); d.appendChild(el('div', 's', s[2])); stats.appendChild(d);
     });
 
     // arya: what needs review

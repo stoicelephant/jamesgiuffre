@@ -5,19 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>fomo team</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#516AF6">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23516AF6'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0B091F">
+<link rel="icon" href="/brand/app-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/brand/app-icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 
 <!-- sign in -->
 <div id="signin" class="signin" hidden>
+  <div class="lockup lockup-white" aria-label="fomo">
+    <img src="/brand/eyes-white.svg" alt="" class="lk-eyes"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word">
+  </div>
   <div class="signin-card">
-    <div class="wordmark">fomo <span>team</span></div>
+    <p class="signin-kicker">team</p>
     <h1>who's this?</h1>
     <form id="login-form" autocomplete="off">
       <div class="combo">
@@ -34,7 +38,9 @@
 <!-- app -->
 <div id="shell" class="shell" hidden>
   <header class="topbar">
-    <div class="wordmark">fomo <span>team</span></div>
+    <a class="lockup lockup-top" href="#overview" aria-label="fomo team home">
+      <img src="/brand/eyes-white.svg" alt="" class="lk-eyes"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word"><span class="lk-team">team</span>
+    </a>
     <nav class="tabs" id="tabs" aria-label="sections">
       <button type="button" data-view="overview">overview</button>
       <button type="button" data-view="time">time</button>
