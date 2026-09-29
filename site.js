@@ -8,5 +8,7 @@ document.querySelectorAll('img[data-alt]').forEach(function (img) {
   });
 });
 document.querySelectorAll('a.mail').forEach(function (a) {
-  a.href = 'mailto:' + a.dataset.u + '@' + a.dataset.d;
+  a.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + a.dataset.u + '@' + a.dataset.d;
+  a.target = '_blank';
+  a.rel = 'noopener';
 });
