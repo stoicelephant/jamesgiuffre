@@ -148,13 +148,13 @@
   function mine(list) { return list.filter(function (x) { return x.name === me; }); }
   function inMonth(list) { return list.filter(function (x) { return ymOf(x.date) === ym; }); }
   function owedToMe() {
-    var inv = sum(mine(D.invoices).filter(function (i) { return i.status !== 'paid'; }), function (i) { return i.amount; });
+    var inv = sum(mine(D.invoices).filter(function (i) { return i.status !== 'paid' && i.status !== 'rejected'; }), function (i) { return i.amount; });
     var req = sum(mine(D.requests).filter(function (r) { return r.status === 'pending' || r.status === 'approved'; }), function (r) { return r.total; });
     return inv + req;
   }
   var EXP_STATUS = { unsubmitted: ['draft', 'not sent'], pending: ['pending', 'with arya'], approved: ['approved', 'approved'], reimbursed: ['paid', 'paid'], rejected: ['rejected', 'rejected'] };
-  var REQ_STATUS = { pending: ['pending', 'with arya'], approved: ['approved', 'approved'], paid: ['paid', 'paid'], rejected: ['rejected', 'rejected'] };
-  var INV_STATUS = { submitted: ['pending', 'with arya'], paid: ['paid', 'paid'] };
+  var REQ_STATUS = { pending: ['pending', 'with arya'], review: ['pending', 'to review'], approved: ['approved', 'approved'], paid: ['paid', 'paid'], rejected: ['rejected', 'rejected'] };
+  var INV_STATUS = Object.assign({ submitted: ['pending', 'with arya'] }, REQ_STATUS);
   function pill(map, status) { var s = map[status] || ['draft', status]; return el('span', 'pill ' + s[0], s[1]); }
 
   // ---------- render ----------
@@ -199,23 +199,21 @@
     var st = $('standing'); st.textContent = '';
     if (isAdmin) {
       var byOld = function (a, b) { return (a.submitted || '') < (b.submitted || '') ? -1 : 1; };
-      var items = [];
-      D.requests.forEach(function (r) {
-        if (r.status === 'pending') items.push({ who: r.name, kind: 'review', t: 'reimbursement ' + r.number, d: 'to review · ' + r.lines.length + (r.lines.length === 1 ? ' item' : ' items') + ' · sent ' + fmtStamp(r.submitted), amt: r.total, submitted: r.submitted });
-        else if (r.status === 'approved') items.push({ who: r.name, kind: 'payR', t: 'reimbursement ' + r.number, d: 'approved, to pay · sent ' + fmtStamp(r.submitted), amt: r.total, submitted: r.submitted });
-      });
-      D.invoices.forEach(function (i) {
-        if (i.status !== 'paid') items.push({ who: i.name, kind: 'payI', t: 'invoice #' + i.number, d: 'to pay · ' + fmtH(i.hours) + ' hrs · ' + periodLabel(i) + ' · sent ' + fmtStamp(i.submitted), amt: i.amount, submitted: i.submitted });
+      var items = outstanding('').unpaid.map(function (it) {
+        var r = it.obj, pend = it.status === 'pending';
+        var d = (pend ? 'to review' : 'approved, to pay') + ' · ' + (it.type === 'request' ? r.lines.length + (r.lines.length === 1 ? ' item' : ' items') : fmtH(r.hours) + ' hrs · ' + periodLabel(r)) + ' · sent ' + fmtStamp(r.submitted);
+        return { who: it.name, kind: (pend ? 'p' : 'a') + (it.type === 'request' ? 'R' : 'I'), t: it.label, d: d, amt: it.amount, submitted: it.submitted };
       });
       var people = {};
       items.sort(byOld).forEach(function (it) { (people[it.who] = people[it.who] || []).push(it); });
       Object.keys(people).forEach(function (who) {
         var list = people[who];
         var n = function (k) { return list.filter(function (x) { return x.kind === k; }).length; };
-        var rv = n('review'), pr = n('payR'), pi = n('payI'), parts = [];
-        if (rv) parts.push(rv + ' pending ' + (rv === 1 ? 'reimbursement' : 'reimbursements'));
-        if (pr) parts.push(pr + ' approved ' + (pr === 1 ? 'reimbursement' : 'reimbursements') + ' to pay');
-        if (pi) parts.push(pi + ' pending ' + (pi === 1 ? 'invoice' : 'invoices'));
+        var pR = n('pR'), pI = n('pI'), aR = n('aR'), aI = n('aI'), parts = [];
+        var word = function (k, one, many) { return k + ' ' + (k === 1 ? one : many); };
+        if (pR) parts.push(word(pR, 'pending reimbursement', 'pending reimbursements'));
+        if (pI) parts.push(word(pI, 'pending invoice', 'pending invoices'));
+        if (aR + aI) parts.push((aR + aI) + ' approved to pay');
         var grp = el('div', 'stand-group' + (openPeople[who] ? ' open' : ''));
         var head = el('button', 'stand'); head.type = 'button'; head.setAttribute('aria-expanded', String(!!openPeople[who]));
         var l = el('div', 'who'); l.appendChild(el('span', 'avatar', who.charAt(0)));
@@ -228,9 +226,9 @@
           a.appendChild(el('div', 't', it.t)); a.appendChild(el('div', 'd', it.d));
           row.appendChild(a); row.appendChild(el('span', 'amt', money(it.amt))); body.appendChild(row);
         });
-        var go = el('button', 'btn ghost small', 'review in approvals'); go.type = 'button';
+        var go = el('button', 'link', 'see in approvals →'); go.type = 'button';
         go.addEventListener('click', function () { location.hash = 'approvals'; });
-        var gf = el('div', 'stand-foot'); gf.appendChild(go); body.appendChild(gf);
+        var gf = el('div', 'stand-foot'); bulkButtons(who, gf); gf.appendChild(go); body.appendChild(gf);
         grp.appendChild(body);
         head.addEventListener('click', function () { openPeople[who] = !openPeople[who]; grp.classList.toggle('open', openPeople[who]); head.setAttribute('aria-expanded', String(openPeople[who])); });
         st.appendChild(grp);
@@ -255,7 +253,7 @@
     var un = inMonth(mine(D.entries)).filter(function (e) { return !e.invoiceId; }).length;
     if (!inv.length) return un ? 'not invoiced yet' : 'nothing to invoice';
     if (un) return 'new time since last invoice';
-    return inv.every(function (i) { return i.status === 'paid'; }) ? 'paid' : 'invoice sent';
+    return inv.every(function (i) { return i.status === 'paid' || i.status === 'rejected'; }) ? 'paid' : inv.some(function (i) { return i.status === 'approved'; }) ? 'invoice approved' : 'invoice sent';
   }
 
   // ---------- time ----------
@@ -336,7 +334,7 @@
     E.forEach(function (e) {
       var tr = el('tr');
       tr.appendChild(el('td', null, fmtDate(e.date)));
-      tr.appendChild(el('td', 'work', e.matter));
+      var wk = el('td', 'work', e.matter); if (e.rejectedFrom) wk.appendChild(el('span', 'sub', 'returned from #' + e.rejectedFrom + (e.reviewNote ? ' · arya: ' + e.reviewNote : ''))); tr.appendChild(wk);
       var tc = el('td', 'num', fmtH(e.hours)); if (e.start) tc.appendChild(el('span', 'sub', fmtRange(e.start, e.hours))); tr.appendChild(tc);
       tr.appendChild(el('td', 'num hide-sm', money(e.rate)));
       tr.appendChild(el('td', 'num', money(e.hours * e.rate)));
@@ -726,7 +724,9 @@
   }
   function invoiceDetail(i) {
     var box = el('div', 'breakdown');
-    box.appendChild(steps([['submitted', i.submitted], i.paidAt ? ['paid', i.paidAt] : null]));
+    box.appendChild(steps([['submitted', i.submitted], i.approvedAt ? ['approved', i.approvedAt] : null, i.rejectedAt ? ['rejected', i.rejectedAt, true] : null, i.paidAt ? ['paid', i.paidAt] : null]));
+    if (i.note) box.appendChild(el('p', 'breakdown-note', 'arya: ' + i.note));
+    if (i.status === 'rejected') box.appendChild(el('p', 'breakdown-note', 'this time is back in unbilled time. fix it up and invoice again.'));
     var tbl = el('table', 'tbl mini'), tb = el('tbody');
     i.lines.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (l) {
       var tr = el('tr');
@@ -792,90 +792,143 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('viewer').hidden) closeViewer(); });
 
   // ---------- approvals (arya) ----------
-  function review(r, action, note, btn) {
+  // ---------- approvals: invoices and reimbursements go through the same review ----------
+  // every item arya reviews, as one shape: {type, obj, name, label, status, amount, submitted}
+  function stat(x) { return x.status === 'submitted' ? 'pending' : x.status; }
+  function queue() {
+    return D.requests.map(function (r) { return { type: 'request', obj: r, name: r.name, label: 'reimbursement ' + r.number, status: stat(r), amount: r.total, submitted: r.submitted }; })
+      .concat(D.invoices.map(function (i) { return { type: 'invoice', obj: i, name: i.name, label: 'invoice #' + i.number, status: stat(i), amount: i.amount, submitted: i.submitted }; }));
+  }
+  function patchItem(it, action, note) {
+    return it.type === 'request'
+      ? api('PATCH', '/api/reimbursements', { name: me, id: it.obj.id, action: action, note: note == null ? '' : note })
+      : api('PATCH', '/api/invoices', { name: me, id: it.obj.id, action: action, note: note == null ? '' : note });
+  }
+  function review(it, action, note, btn) {
     btn.disabled = true;
-    api('PATCH', '/api/reimbursements', { name: me, id: r.id, action: action, note: note || '' })
-      .then(function () { toast(r.number + ' ' + ({ approve: 'approved', reject: 'rejected', paid: 'marked paid' })[action]); return load(); })
+    patchItem(it, action, note)
+      .then(function () { toast(it.name + ' · ' + it.label + ' ' + ({ approve: 'approved', reject: 'rejected', paid: 'marked paid' })[action]); return load(); })
       .catch(function (x) { toast(x.message); btn.disabled = false; });
   }
-  function renderApprovals() {
-    var list = $('approval-list'); list.textContent = '';
-    var open = D.requests.filter(function (r) { return r.status === 'pending' || r.status === 'approved'; })
-      .sort(function (a, b) { return (a.status === b.status ? 0 : a.status === 'pending' ? -1 : 1) || (a.submitted < b.submitted ? -1 : 1); });
-    var pend = open.filter(function (r) { return r.status === 'pending'; }).length;
-    var badge = $('approvals-badge'); badge.hidden = !pend; badge.textContent = pend;
-    if (!open.length) list.appendChild(el('div', 'approvals-empty', 'no reimbursement requests waiting. nice.'));
-    open.forEach(function (r) {
-      var c = el('div', 'req');
-      var head = el('div', 'req-head'), who = el('div', 'who');
-      who.appendChild(el('span', 'avatar', r.name.charAt(0)));
-      var t = el('div'); t.appendChild(el('strong', null, r.name + ' · ' + r.number)); t.appendChild(el('div', 'd', 'sent ' + fmtStamp(r.submitted) + ' · ' + r.lines.length + (r.lines.length === 1 ? ' item' : ' items'))); who.appendChild(t);
-      var right = el('div'); right.style.textAlign = 'right'; right.appendChild(el('div', 'req-total', money(r.total))); right.appendChild(pill(REQ_STATUS, r.status));
-      head.appendChild(who); head.appendChild(right); c.appendChild(head);
-
-      var wrap = el('div', 'table-wrap'), tbl = el('table', 'tbl'), tb = el('tbody');
-      r.lines.forEach(function (l) {
+  // approve / pay many at once. who = one person's name, or '' for everyone
+  function outstanding(who) {
+    var q = queue().filter(function (it) { return !who || it.name === who; });
+    return {
+      review: q.filter(function (it) { return it.status === 'pending'; }),
+      unpaid: q.filter(function (it) { return it.status === 'pending' || it.status === 'approved'; })
+    };
+  }
+  function bulk(kind, who, btn) {
+    var o = outstanding(who), list = kind === 'approve' ? o.review : o.unpaid;
+    if (!list.length) return;
+    btn.disabled = true; btn.textContent = kind === 'approve' ? 'approving…' : 'marking paid…';
+    var done = 0, failed = 0;
+    list.reduce(function (p, it) { return p.then(function () { return patchItem(it, kind, it.obj.note || '').then(function () { done++; }, function () { failed++; }); }); }, Promise.resolve())
+      .then(function () {
+        var what = kind === 'approve' ? 'approved' : 'marked paid';
+        toast(failed ? done + ' ' + what + ', ' + failed + ' failed. try again' : done + ' ' + what + (who ? ' for ' + who : ''));
+        return load();
+      });
+  }
+  function bulkButtons(who, box) {
+    var o = outstanding(who), n = 0, tot = function (l) { return sum(l, function (it) { return it.amount; }); };
+    if (o.review.length) {
+      var a = el('button', 'btn primary small', 'approve all' + (o.review.length > 1 ? ' ' + o.review.length : '')); a.type = 'button';
+      a.addEventListener('click', function (e) { e.stopPropagation(); if (armed(a, 'tap again to approve ' + money(tot(o.review)))) bulk('approve', who, a); });
+      box.appendChild(a); n++;
+    }
+    if (o.unpaid.length) {
+      var b = el('button', 'btn ghost small', 'mark all paid' + (o.unpaid.length > 1 ? ' ' + o.unpaid.length : '')); b.type = 'button';
+      b.addEventListener('click', function (e) { e.stopPropagation(); if (armed(b, 'tap again to mark ' + money(tot(o.unpaid)) + ' paid')) bulk('paid', who, b); });
+      box.appendChild(b); n++;
+    }
+    return n;
+  }
+  function itemLines(it) {
+    var wrap = el('div', 'table-wrap'), tbl = el('table', 'tbl'), tb = el('tbody');
+    if (it.type === 'request') {
+      it.obj.lines.forEach(function (l) {
         var tr = el('tr');
         tr.appendChild(el('td', null, fmtDate(l.date)));
         var w = el('td', 'work', l.merchant); if (l.note) w.appendChild(el('span', 'sub', l.note)); tr.appendChild(w);
         var cc = el('td', 'hide-sm'); cc.appendChild(el('span', 'catpill', l.category)); tr.appendChild(cc);
         tr.appendChild(el('td', 'num', money(l.amount)));
         var act = el('td', 'act');
-        if (l.hasReceipt) act.appendChild(receiptButton({ id: l.expenseId })); else act.appendChild(el('span', 'muted', 'no receipt'));
+        if (l.hasReceipt) act.appendChild(receiptButton({ id: l.expenseId })); else act.appendChild(el('span', 'muted hide-sm', 'no receipt'));
         tr.appendChild(act); tb.appendChild(tr);
       });
-      tbl.appendChild(tb); wrap.appendChild(tbl); c.appendChild(wrap);
+    } else {
+      it.obj.lines.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (l) {
+        var tr = el('tr');
+        tr.appendChild(el('td', null, fmtDate(l.date)));
+        tr.appendChild(el('td', 'work', l.matter));
+        var tc = el('td', 'num', fmtH(l.hours)); if (l.start) tc.appendChild(el('span', 'sub', fmtRange(l.start, l.hours))); tr.appendChild(tc);
+        tr.appendChild(el('td', 'num hide-sm', money(l.rate) + '/hr'));
+        tr.appendChild(el('td', 'num', money(l.amount)));
+        tb.appendChild(tr);
+      });
+    }
+    tbl.appendChild(tb); wrap.appendChild(tbl); return wrap;
+  }
+  function renderApprovals() {
+    var all = queue(), o = outstanding('');
+    var badge = $('approvals-badge'); badge.hidden = !o.review.length; badge.textContent = o.review.length;
+
+    // bulk bar
+    var bb = $('bulk-bar'); bb.textContent = '';
+    var info = el('p'), tot = function (l) { return money(sum(l, function (it) { return it.amount; })); };
+    if (o.review.length) info.append(el('strong', null, o.review.length + ' to review'), ' · ' + tot(o.review) + '   ');
+    if (o.unpaid.length) info.append(el('strong', null, o.unpaid.length + ' unpaid'), ' · ' + tot(o.unpaid));
+    var btns = el('div', 'bulk-btns');
+    bb.hidden = !bulkButtons('', btns);
+    bb.appendChild(info); bb.appendChild(btns);
+
+    // one list: pending first, then approved-to-pay, oldest first within each
+    var list = $('approval-list'); list.textContent = '';
+    var open = o.unpaid.slice().sort(function (a, b) { return (a.status === b.status ? 0 : a.status === 'pending' ? -1 : 1) || (a.submitted < b.submitted ? -1 : 1); });
+    if (!open.length) list.appendChild(el('div', 'approvals-empty', 'nothing waiting. nice.'));
+    open.forEach(function (it) {
+      var r = it.obj, c = el('div', 'req');
+      var head = el('div', 'req-head'), who = el('div', 'who');
+      who.appendChild(el('span', 'avatar', it.name.charAt(0)));
+      var t = el('div'); t.appendChild(el('strong', null, it.name + ' · ' + it.label));
+      var sub = it.type === 'request'
+        ? r.lines.length + (r.lines.length === 1 ? ' expense' : ' expenses')
+        : fmtH(r.hours) + ' hrs · ' + periodLabel(r);
+      t.appendChild(el('div', 'd', sub + ' · sent ' + fmtStamp(r.submitted))); who.appendChild(t);
+      var right = el('div'); right.style.textAlign = 'right'; right.appendChild(el('div', 'req-total', money(it.amount)));
+      right.appendChild(pill(REQ_STATUS, it.status === 'pending' ? 'review' : it.status));
+      head.appendChild(who); head.appendChild(right); c.appendChild(head);
+      c.appendChild(itemLines(it));
 
       var acts = el('div', 'req-actions');
-      if (r.status === 'pending') {
-        var note = document.createElement('input'); note.placeholder = 'note (optional, shown to ' + r.name + ')'; note.maxLength = 300;
+      if (it.status === 'pending') {
+        var note = document.createElement('input'); note.placeholder = 'note (optional, shown to ' + it.name + ')'; note.maxLength = 300;
         var rej = el('button', 'btn ghost', 'reject'); rej.type = 'button';
-        rej.addEventListener('click', function () { if (armed(rej, 'tap to reject')) review(r, 'reject', note.value, rej); });
+        rej.addEventListener('click', function () { if (armed(rej, 'tap to reject')) review(it, 'reject', note.value, rej); });
         var ok = el('button', 'btn primary', 'approve'); ok.type = 'button';
-        ok.addEventListener('click', function () { review(r, 'approve', note.value, ok); });
+        ok.addEventListener('click', function () { review(it, 'approve', note.value, ok); });
         var paid = el('button', 'btn ghost', 'approve + paid'); paid.type = 'button';
-        paid.addEventListener('click', function () { review(r, 'paid', note.value, paid); });
+        paid.addEventListener('click', function () { review(it, 'paid', note.value, paid); });
         acts.appendChild(note); acts.appendChild(rej); acts.appendChild(paid); acts.appendChild(ok);
       } else {
         acts.appendChild(el('span', 'muted', 'approved ' + fmtStamp(r.approvedAt) + (r.note ? ' · "' + r.note + '"' : '') + '. mark paid once the money is sent.'));
-        var mp = el('button', 'btn primary', 'mark paid'); mp.type = 'button'; mp.style.marginLeft = 'auto';
-        mp.addEventListener('click', function () { review(r, 'paid', r.note, mp); });
+        if (it.type === 'invoice') { var pv = el('button', 'link', 'print'); pv.type = 'button'; pv.style.marginLeft = 'auto'; pv.addEventListener('click', function () { printInvoice(r); }); acts.appendChild(pv); }
+        var mp = el('button', 'btn primary', 'mark paid'); mp.type = 'button'; if (it.type !== 'invoice') mp.style.marginLeft = 'auto';
+        mp.addEventListener('click', function () { review(it, 'paid', r.note, mp); });
         acts.appendChild(mp);
       }
       c.appendChild(acts); list.appendChild(c);
     });
 
-    // invoices to pay
-    var inv = D.invoices.filter(function (i) { return i.status !== 'paid'; }).sort(function (a, b) { return a.submitted < b.submitted ? -1 : 1; });
-    var pb = $('pay-rows'); pb.textContent = '';
-    inv.forEach(function (i) {
-      var tr = el('tr');
-      tr.appendChild(el('td', null, '#' + i.number));
-      tr.appendChild(el('td', null, i.name));
-      tr.appendChild(el('td', null, monthLabel(i.month)));
-      tr.appendChild(el('td', 'num', money(i.amount)));
-      var sc = el('td'); sc.appendChild(pill(INV_STATUS, i.status || 'submitted')); tr.appendChild(sc);
-      var act = el('td', 'act');
-      var pr = el('button', 'link', 'view'); pr.type = 'button'; pr.style.marginRight = '12px'; pr.addEventListener('click', function () { printInvoice(i); });
-      var mp = el('button', 'btn primary small', 'mark paid'); mp.type = 'button';
-      mp.addEventListener('click', function () {
-        mp.disabled = true;
-        api('PATCH', '/api/invoices', { name: me, id: i.id, status: 'paid' })
-          .then(function () { toast('invoice #' + i.number + ' marked paid'); return load(); })
-          .catch(function (x) { toast(x.message); mp.disabled = false; });
-      });
-      act.appendChild(pr); act.appendChild(mp); tr.appendChild(act); pb.appendChild(tr);
-    });
-    $('pay-empty').hidden = inv.length > 0;
-
     // history
     var ev = [];
-    D.requests.forEach(function (r) {
-      if (r.rejectedAt) ev.push({ at: r.rejectedAt, t: r.name + ' · ' + r.number + ' rejected', a: money(r.total), s: 'rejected' });
-      if (r.paidAt) ev.push({ at: r.paidAt, t: r.name + ' · ' + r.number + ' paid', a: money(r.total), s: 'paid' });
-      else if (r.approvedAt) ev.push({ at: r.approvedAt, t: r.name + ' · ' + r.number + ' approved', a: money(r.total), s: 'approved' });
+    all.forEach(function (it) {
+      var r = it.obj, a = money(it.amount), t = it.name + ' · ' + it.label;
+      if (r.rejectedAt) ev.push({ at: r.rejectedAt, t: t + ' rejected', a: a, s: 'rejected' });
+      if (r.paidAt) ev.push({ at: r.paidAt, t: t + ' paid', a: a, s: 'paid' });
+      else if (r.approvedAt && !r.rejectedAt) ev.push({ at: r.approvedAt, t: t + ' approved', a: a, s: 'approved' });
     });
-    D.invoices.forEach(function (i) { if (i.paidAt) ev.push({ at: i.paidAt, t: i.name + ' · invoice #' + i.number + ' paid', a: money(i.amount), s: 'paid' }); });
     ev.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
     var h = $('history'); h.textContent = '';
     if (!ev.length) h.appendChild(el('li', 'empty-li', 'nothing reviewed yet.'));

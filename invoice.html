@@ -244,17 +244,8 @@
     <!-- ============ approvals (arya) ============ -->
     <section class="view admin-only" data-view="approvals">
       <div class="page-head"><div><button type="button" class="back-link" data-go="overview">← overview</button><h2>approvals</h2></div></div>
+      <div class="bulk-bar" id="bulk-bar" hidden></div>
       <div id="approval-list"></div>
-      <div class="card">
-        <div class="card-head"><h3>invoices to pay</h3></div>
-        <div class="table-wrap">
-          <table class="tbl">
-            <thead><tr><th>no.</th><th>who</th><th>period</th><th class="num">amount</th><th>status</th><th class="act"></th></tr></thead>
-            <tbody id="pay-rows"></tbody>
-          </table>
-          <p class="empty" id="pay-empty">no invoices waiting.</p>
-        </div>
-      </div>
       <div class="card">
         <div class="card-head"><h3>history</h3></div>
         <ul class="feed" id="history"></ul>
