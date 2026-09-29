@@ -521,7 +521,12 @@
   }
   function clearReceipt() { scanId++; scanStatus(''); receipt = null; $('receipt').value = ''; $('drop-empty').hidden = false; $('drop-full').hidden = true; $('drop-img').removeAttribute('src'); }
   $('receipt').addEventListener('change', function () { if (this.files[0]) setReceipt(this.files[0]); });
-  $('drop-clear').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); clearReceipt(); });
+  $('drop-clear').addEventListener('click', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    if (receipt) { clearReceipt(); if (editing && editing.receiptId && !removeExisting) showExistingReceipt(); }
+    else if (editing && editing.receiptId) { removeExisting = true; clearReceipt(); }
+    else clearReceipt();
+  });
   var drop = $('drop');
   ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
   ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
@@ -529,6 +534,38 @@
 
   function parseAmount(v) { var n = parseFloat(String(v || '').replace(/[$,\s]/g, '')); return isFinite(n) ? Math.round(n * 100) / 100 : NaN; }
   $('amount').addEventListener('blur', function () { var n = parseAmount(this.value); if (isFinite(n) && n > 0) this.value = n.toFixed(2); });
+
+  // ---------- editing an expense (only before it's sent to arya, or after a rejection) ----------
+  var editing = null, removeExisting = false;
+  function setCategory(c) { category = c || ''; $$('.chip', cats).forEach(function (o) { var on = o.textContent === category; o.classList.toggle('on', on); o.setAttribute('aria-checked', on); }); }
+  function showExistingReceipt() {
+    $('drop-empty').hidden = true; $('drop-full').hidden = false;
+    $('drop-img').hidden = true; $('drop-pdf').hidden = false; $('drop-pdf').textContent = 'saved';
+    $('drop-name').textContent = 'current receipt · drop a new one to replace';
+  }
+  function startEdit(x) {
+    editing = x; removeExisting = false; receipt = null; scanId++; scanStatus('');
+    $('merchant').value = x.merchant; $('amount').value = Number(x.amount).toFixed(2); $('xdate').value = x.date; $('xnote').value = x.note || '';
+    setCategory(x.category);
+    if (x.receiptId) showExistingReceipt(); else { $('drop-empty').hidden = false; $('drop-full').hidden = true; }
+    $('expense-form-title').textContent = 'edit expense';
+    $('add-expense').textContent = 'save changes';
+    $('cancel-edit').hidden = false;
+    $('expense-form').classList.add('editing');
+    $('expense-err').textContent = '';
+    $('expense-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () { $('merchant').focus(); }, 300);
+  }
+  function endEdit() {
+    editing = null; removeExisting = false;
+    $('merchant').value = ''; $('amount').value = ''; $('xnote').value = ''; $('xdate').value = today();
+    setCategory(''); clearReceipt(); $('drop-pdf').textContent = 'pdf';
+    $('expense-form-title').textContent = 'add expense';
+    $('add-expense').textContent = 'add expense';
+    $('cancel-edit').hidden = true;
+    $('expense-form').classList.remove('editing');
+  }
+  $('cancel-edit').addEventListener('click', endEdit);
 
   $('expense-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -538,12 +575,29 @@
     if (!(amount > 0)) { err.textContent = 'add the amount.'; $('amount').focus(); return; }
     if (!date) { err.textContent = 'pick a date.'; return; }
     if (!category) { err.textContent = 'pick a category.'; return; }
-    var btn = $('add-expense'); btn.disabled = true; btn.textContent = receipt ? 'uploading…' : 'adding…';
+    var btn = $('add-expense'); btn.disabled = true;
+    if (editing) {
+      btn.textContent = 'saving…';
+      var ed = editing;
+      api('PATCH', '/api/expenses', { name: me, id: ed.id, date: date, merchant: merchant, amount: amount, category: category, note: $('xnote').value.trim(),
+        receipt: receipt ? { data: receipt.data, type: receipt.type, filename: receipt.filename } : null, removeReceipt: removeExisting })
+        .then(function (d) {
+          D.expenses = D.expenses.map(function (o) { return o.id === d.expense.id ? d.expense : o; });
+          endEdit();
+          if (ymOf(date) !== ym) ym = ymOf(date);
+          toast('saved ' + merchant + ' · ' + money(amount));
+          render();
+        })
+        .catch(function (x) { err.textContent = x.message; btn.textContent = 'save changes'; })
+        .then(function () { btn.disabled = false; });
+      return;
+    }
+    btn.textContent = receipt ? 'uploading…' : 'adding…';
     api('POST', '/api/expenses', { name: me, date: date, merchant: merchant, amount: amount, category: category, note: $('xnote').value.trim(), receipt: receipt ? { data: receipt.data, type: receipt.type, filename: receipt.filename } : null })
       .then(function (d) {
         D.expenses.push(d.expense);
         $('merchant').value = ''; $('amount').value = ''; $('xnote').value = ''; clearReceipt();
-        category = ''; $$('.chip', cats).forEach(function (o) { o.classList.remove('on'); o.setAttribute('aria-checked', 'false'); });
+        setCategory('');
         selected[d.expense.id] = true;
         if (ymOf(date) !== ym) ym = ymOf(date);
         toast('added ' + merchant + ' · ' + money(amount));
@@ -579,6 +633,9 @@
       tr.appendChild(el('td', 'num', money(x.amount)));
       var sc = el('td', 'hide-sm'); sc.appendChild(pill(EXP_STATUS, x.status)); tr.appendChild(sc);
       var act = el('td', 'act');
+      if (selectable(x)) {
+        var eb = el('button', 'rc edit', 'edit'); eb.type = 'button'; eb.addEventListener('click', function () { startEdit(x); }); act.appendChild(eb);
+      }
       if (x.receiptId) act.appendChild(receiptButton(x));
       if (selectable(x)) {
         var d = el('button', 'del', '×'); d.type = 'button'; d.setAttribute('aria-label', 'delete expense');
@@ -586,7 +643,7 @@
           if (!armed(d, 'delete?', 2500)) return;
           d.disabled = true;
           api('DELETE', '/api/expenses?id=' + encodeURIComponent(x.id) + '&name=' + encodeURIComponent(me))
-            .then(function () { D.expenses = D.expenses.filter(function (o) { return o.id !== x.id; }); delete selected[x.id]; render(); })
+            .then(function () { if (editing && editing.id === x.id) endEdit(); D.expenses = D.expenses.filter(function (o) { return o.id !== x.id; }); delete selected[x.id]; render(); })
             .catch(function (er) { toast(er.message); d.disabled = false; });
         });
         act.appendChild(d);
