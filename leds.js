@@ -4,7 +4,8 @@
   var canvas = document.getElementById('leds');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var COLS = 32, ROWS = 24;
+  var COLS = 56, ROWS = 42;
+  var S = 32 / COLS;                        // keeps the motion the same at any resolution
   var BPM = 124, beatLen = 60 / BPM;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -16,7 +17,7 @@
 
   function resize() {
     var r = canvas.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(r.width * dpr);
     canvas.height = Math.round(r.height * dpr);
     w = r.width; h = r.height;
@@ -31,9 +32,9 @@
     var kick = Math.exp(-beat * 6);
     var x = c / (COLS - 1);
     var base = 0.55 - 0.3 * x;                               // more bass than treble
-    var wob = 0.18 * Math.sin(t * 2.1 + c * 0.55)
-            + 0.12 * Math.sin(t * 3.7 - c * 0.9)
-            + 0.08 * Math.sin(t * 7.3 + c * 1.7);
+    var wob = 0.18 * Math.sin(t * 2.1 + c * S * 0.55)
+            + 0.12 * Math.sin(t * 3.7 - c * S * 0.9)
+            + 0.08 * Math.sin(t * 7.3 + c * S * 1.7);
     var k = kick * (0.35 - 0.2 * x);
     return Math.max(0.06, Math.min(1, base + wob + k));
   }
@@ -45,7 +46,7 @@
     ctx.clearRect(0, 0, w, h);
 
     ripples = ripples.filter(function (r) { return t - r.t0 < 1.4; });
-    var rad = cell * 0.36;
+    var rad = cell * 0.38;
 
     for (var c = 0; c < COLS; c++) {
       var lv = level(c, t) * ROWS;
@@ -59,8 +60,8 @@
         var boost = 0;
         for (var i = 0; i < ripples.length; i++) {
           var rp = ripples[i], age = t - rp.t0;
-          var d = Math.hypot(cx - rp.x, cy - rp.y) - age * cell * 14;
-          boost += Math.max(0, 1 - Math.abs(d) / (cell * 1.4)) * (1 - age / 1.4);
+          var d = Math.hypot(cx - rp.x, cy - rp.y) - age * cell * 24;
+          boost += Math.max(0, 1 - Math.abs(d) / (cell * 2.4)) * (1 - age / 1.4);
         }
         var I = Math.min(1, on + boost * 0.9);
 
@@ -68,7 +69,7 @@
         var g = Math.round(235 - I * 190);                     // #ebebeb -> #2d2d2d
         var grey = [g, g, g];
         // color version
-        var hue = (c * 9 + r * 2 + t * 40) % 360;
+        var hue = (c * S * 9 + r * S * 2 + t * 40) % 360;
         var col = hsl(hue, 0.9, 0.55);
         var off = [238, 238, 238];
         var lit = [
@@ -113,7 +114,7 @@
   canvas.addEventListener('pointermove', function (e) {
     var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     var now = (performance.now() - start) / 1000;
-    if (Math.hypot(x - last.x, y - last.y) > cell * 3 || now - last.t > 0.25) {
+    if (Math.hypot(x - last.x, y - last.y) > cell * 5 || now - last.t > 0.25) {
       ripples.push({ x: x, y: y, t0: now });
       if (ripples.length > 8) ripples.shift();
       last = { x: x, y: y, t: now };
