@@ -36,7 +36,7 @@
     <section id="app" hidden>
       <div class="head">
         <h1>invoice</h1>
-        <p class="who">logged in as <strong id="who"></strong> · <button class="link" id="switch" type="button">switch</button></p>
+        <p class="who">logged in as <strong id="who"></strong> · <button class="link" id="switch" type="button">switch</button><span id="team-link" hidden> · <a href="/team">team view →</a></span></p>
       </div>
 
       <div class="block">
@@ -87,10 +87,6 @@
         <div class="list-head">
           <h2>entries</h2>
           <div class="filters">
-            <div class="seg" role="group" aria-label="whose entries">
-              <button type="button" class="on" data-scope="mine">mine</button>
-              <button type="button" data-scope="all">everyone</button>
-            </div>
             <input id="month" type="month" aria-label="month">
           </div>
         </div>

@@ -22,11 +22,13 @@ async function call(path, body) {
 }
 
 // The only names allowed on /invoice (keep in sync with TEAM in invoice.js).
-const TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan', 'James Giuffre'];
+const TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
+// arya can see everyone's hours, pay, and invoices; everyone else only sees their own.
+const ADMIN = 'arya';
 const member = (n) => TEAM.find((t) => t.toLowerCase() === String(n || '').replace(/\s+/g, ' ').trim().toLowerCase()) || null;
 
 module.exports = {
-  TEAM, member,
+  TEAM, ADMIN, member,
   ready: () => !!(URL_ && TOKEN),
   seen,
   cmd: async (c) => (await call('', c)).result,

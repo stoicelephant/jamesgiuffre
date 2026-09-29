@@ -10,14 +10,14 @@
   };
   var LOCAL_E = 'inv.entries.local', LOCAL_I = 'inv.invoices.local';
   // The only names that can sign in (keep in sync with TEAM in api/_redis.js).
-  var TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan', 'James Giuffre'];
+  var TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
   function member(n) { var k = String(n || '').replace(/\s+/g, ' ').trim().toLowerCase(); for (var i = 0; i < TEAM.length; i++) if (TEAM[i].toLowerCase() === k) return TEAM[i]; return null; }
 
   var me = member(store.get('inv.name')) || '';
   var hours = 0;
   var entries = [], invoices = [];
   var mode = 'remote';       // 'remote' = shared via /api, 'local' = this browser only
-  var scope = 'mine';
+  var scope = 'mine';        // everyone sees only their own entries here; arya has /team for the full view
 
   // ---------- helpers ----------
   function key(n) { return String(n || '').trim().toLowerCase(); }
@@ -41,7 +41,7 @@
   function localPut(k, v) { store.set(k, JSON.stringify(v)); }
 
   function load() {
-    return fetch('/api/entries', { cache: 'no-store' })
+    return fetch('/api/entries?name=' + encodeURIComponent(me), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (d) { mode = 'remote'; entries = d.entries || []; invoices = d.invoices || []; })
       .catch(function () { mode = 'local'; entries = localGet(LOCAL_E); invoices = localGet(LOCAL_I); })
@@ -93,7 +93,7 @@
   function visible() {
     var ym = $('month').value;
     return entries
-      .filter(function (e) { return (!ym || e.date.slice(0, 7) === ym) && (scope === 'all' || key(e.name) === key(me)); })
+      .filter(function (e) { return (!ym || e.date.slice(0, 7) === ym) && key(e.name) === key(me); })
       .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.created < b.created ? 1 : -1); });
   }
   function pending() {
@@ -161,7 +161,7 @@
 
   function renderInvoices() {
     var list = invoices
-      .filter(function (i) { return scope === 'all' || key(i.name) === key(me); })
+      .filter(function (i) { return key(i.name) === key(me); })
       .sort(function (a, b) { return a.submitted < b.submitted ? 1 : -1; });
     var body = $('inv-rows'); body.textContent = '';
     list.forEach(function (inv) {
@@ -236,6 +236,7 @@
     $('app').hidden = !signedIn;
     if (!signedIn) { $('login-name').focus(); return; }
     $('who').textContent = me;
+    $('team-link').hidden = me !== 'arya';
     $('rate').value = store.get(rateKey()) || '';
     updatePreview(); grow();
     load();

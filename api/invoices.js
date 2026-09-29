@@ -1,5 +1,5 @@
 // Submit an invoice: bundles one person's not-yet-invoiced entries for a month.
-// GET  /api/invoices                -> { invoices: [...] }
+// GET  /api/invoices?name=..        -> { invoices }  (your own; arya gets everyone's)
 // POST /api/invoices {name, month}  -> { invoice }   (month = "YYYY-MM")
 const crypto = require('crypto');
 const db = require('./_redis');
@@ -10,7 +10,10 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
-      return res.status(200).json({ invoices: db.parseHash(await db.cmd(['HGETALL', db.INVOICES])) });
+      const who = db.member(req.query && req.query.name);
+      if (!who) return res.status(403).json({ error: 'name is not on the team list' });
+      const all = db.parseHash(await db.cmd(['HGETALL', db.INVOICES]));
+      return res.status(200).json({ invoices: all.filter((x) => who === db.ADMIN || x.name === who) });
     }
 
     if (req.method === 'POST') {
@@ -21,7 +24,7 @@ module.exports = async (req, res) => {
       if (!/^\d{4}-\d{2}$/.test(month)) return res.status(400).json({ error: 'bad month' });
 
       const mine = db.parseHash(await db.cmd(['HGETALL', db.ENTRIES]))
-        .filter((e) => e.name.toLowerCase() === name.toLowerCase() && e.date.slice(0, 7) === month && !e.invoiceId)
+        .filter((e) => e.name === name && e.date.slice(0, 7) === month && !e.invoiceId)
         .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.created < b.created ? -1 : 1));
       if (!mine.length) return res.status(400).json({ error: 'nothing new to submit for this month' });
 

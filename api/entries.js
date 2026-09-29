@@ -1,5 +1,5 @@
 // Shared hour log for /invoice (Upstash Redis via Vercel Storage).
-// GET    /api/entries                  -> { entries: [...], invoices: [...] }
+// GET    /api/entries?name=..          -> { entries, invoices }  (your own; arya gets everyone's)
 // POST   /api/entries  {name,date,matter,hours,rate} -> { entry }
 // DELETE /api/entries?id=..&name=..    -> { ok: true }  (own entries only, not once invoiced)
 const crypto = require('crypto');
@@ -11,8 +11,11 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
+      const who = db.member(req.query && req.query.name);
+      if (!who) return res.status(403).json({ error: 'name is not on the team list' });
       const [e, i] = await Promise.all([db.cmd(['HGETALL', db.ENTRIES]), db.cmd(['HGETALL', db.INVOICES])]);
-      return res.status(200).json({ entries: db.parseHash(e), invoices: db.parseHash(i) });
+      const mine = (x) => who === db.ADMIN || x.name === who;
+      return res.status(200).json({ entries: db.parseHash(e).filter(mine), invoices: db.parseHash(i).filter(mine), admin: who === db.ADMIN });
     }
 
     if (req.method === 'POST') {

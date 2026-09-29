@@ -117,7 +117,7 @@ table.inv-list.mine .c-who{display:none}
   @page{margin:18mm}
   body{font-size:12px}
   .page{padding:0;min-height:0}
-  .back,footer,.head,#entry-form,.block:has(.rate),.filters,.actions,.c-x,.login,.submit-inv,.block.invoices,.msg{display:none !important}
+  .back,footer,.head,#entry-form,.block:has(.rate),.block:has(.summary),.filters,.actions,.c-x,.login,.submit-inv,.block.invoices,.msg,#denied{display:none !important}
   .block{margin-top:0}
   .print-only{display:block}
   .print-head{display:flex;justify-content:space-between;margin-bottom:18px;font-size:13px}
@@ -134,3 +134,13 @@ table.inv-list.mine .c-who{display:none}
   .print-invoice .pi-meta{text-align:right;color:#555;line-height:1.7}
   .print-invoice .pi-total{display:flex;justify-content:flex-end;gap:28px;margin-top:18px;font-size:14px;font-weight:500}
 }
+
+/* /team (arya) */
+.inv select{font:inherit;font-size:14px;color:var(--fg);background:transparent;border:0;border-bottom:1px solid #d9d9d9;padding:4px 18px 4px 0;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#888 50%),linear-gradient(135deg,#888 50%,transparent 50%);background-position:calc(100% - 7px) 55%,calc(100% - 3px) 55%;background-size:4px 4px;background-repeat:no-repeat}
+.inv select:focus{border-bottom-color:var(--accent)}
+table.summary tr.pick{cursor:pointer}
+table.summary tr.pick:hover td{background:#fafafa}
+table.summary tr.pick.on td{background:#f5f1ef}
+table.summary td:first-child{padding-left:8px}
+table.summary th:first-child{padding-left:8px}
+table.summary td.due{color:var(--accent)}
