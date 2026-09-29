@@ -254,20 +254,24 @@
     var p = hhmm.split(':'), h = +p[0], h12 = h % 12 || 12;
     return h12 + ':' + p[1] + ' ' + (h < 12 ? 'am' : 'pm');
   }
+  function endTime(st, h) {                                 // "13:00" + 3h -> "16:00"
+    var p = st.split(':'), m = ((+p[0]) * 60 + (+p[1]) + Math.round(h * 60)) % 1440;
+    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
   function startVal() { return parseTime($('start').value) || ''; }
   function updateRange() {
     var raw = $('start').value, st = parseTime(raw), rp = $('range-preview');
     rp.classList.toggle('bad', st === null);
     if (st === null) { rp.textContent = "try 1p or 9:30a"; return; }
     if (!st) { rp.textContent = ''; return; }
-    rp.textContent = hours ? fmtRange(st, hours) : 'starts ' + niceTime(st).replace(':00', '');
+    rp.textContent = hours ? fmtRange(st, hours) : '';
   }
   function updatePreview() {
     updateRange();
     var r = getRate(), pv = $('preview');
     pv.textContent = '';
     if (!isFinite(r)) { pv.textContent = 'set your rate above'; return; }
-    if (!hours) { pv.textContent = 'add some time'; return; }
+    if (!hours) return;
     pv.append(fmtH(hours) + ' × ' + money(r) + '/hr = ', el('strong', null, money(hours * r)));
   }
 
@@ -374,8 +378,10 @@
     var st = startVal();
     addEntry({ name: me, date: date, matter: matter.slice(0, 500), hours: h, rate: r, start: st })
       .then(function () {
-        msg('added ' + fmtH(h) + (st ? ' (' + fmtRange(st, h) + ')' : '') + ' for ' + money(h * r) + '.');
-        $('matter').value = ''; grow(); $('start').value = ''; setHours(0);
+        msg('');
+        // next entry starts where this one ended (when it had a start time)
+        $('start').value = st ? niceTime(endTime(st, h)) : '';
+        $('matter').value = ''; grow(); setHours(0);
         if ($('month').value && $('month').value !== date.slice(0, 7)) $('month').value = date.slice(0, 7);
         render();
       })
@@ -405,16 +411,6 @@
   });
   $('month').addEventListener('change', function () { invMsg(''); render(); });
 
-  $('csv').addEventListener('click', function () {
-    var q = function (v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var lines = [['date', 'name', 'subject matter', 'hours', 'time of day', 'rate', 'amount', 'invoice'].join(',')];
-    visible().forEach(function (e) { lines.push([e.date, e.name, e.matter, e.hours.toFixed(2), fmtRange(e.start, e.hours), e.rate.toFixed(2), (e.hours * e.rate).toFixed(2), e.invoiceNumber ? '#' + e.invoiceNumber : ''].map(q).join(',')); });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
-    a.download = 'hours-' + (scope === 'mine' ? key(me).replace(/\s+/g, '-') : 'team') + '-' + ($('month').value || 'all') + '.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-  });
-  $('print').addEventListener('click', function () { document.body.classList.remove('print-inv'); window.print(); });
 
   // refresh when coming back to the tab, so teammates' entries show up
   document.addEventListener('visibilitychange', function () { if (!document.hidden && me && mode === 'remote') load(); });
