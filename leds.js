@@ -14,6 +14,32 @@
   var ripples = [];                         // {x, y, t0}
   var last = { x: -1, y: -1, t: 0 };
   var running = true, start = performance.now();
+  var HUES = 48, sprites = [], spriteR = 0;  // pre-drawn glowing leds, one per hue
+
+  // one soft, glowing led per hue: bright core, full color at the edge, halo fading out inside its own cell
+  function buildSprites(rad) {
+    sprites = [];
+    spriteR = Math.ceil(rad * 1.3 * dpr);
+    var size = spriteR * 2;
+    for (var i = 0; i < HUES; i++) {
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = size;
+      var g = cv.getContext('2d');
+      var c = hsl(i * 360 / HUES, 0.95, 0.52);
+      var rgb = (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0);
+      var core = [c[0] + (255 - c[0]) * 0.28, c[1] + (255 - c[1]) * 0.28, c[2] + (255 - c[2]) * 0.28];
+      var grad = g.createRadialGradient(spriteR, spriteR, 0, spriteR, spriteR, spriteR);
+      var edge = rad * dpr / spriteR;       // where the dot ends and the halo begins
+      grad.addColorStop(0, 'rgb(' + (core[0] | 0) + ',' + (core[1] | 0) + ',' + (core[2] | 0) + ')');
+      grad.addColorStop(edge * 0.55, 'rgb(' + rgb + ')');
+      grad.addColorStop(edge, 'rgba(' + rgb + ',0.95)');
+      grad.addColorStop(Math.min(1, edge + 0.08), 'rgba(' + rgb + ',0.28)');
+      grad.addColorStop(1, 'rgba(' + rgb + ',0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+      sprites.push(cv);
+    }
+  }
 
   function resize() {
     var r = canvas.getBoundingClientRect();
@@ -23,6 +49,7 @@
     w = r.width; h = r.height;
     cell = Math.min(w / COLS, h / ROWS);
     ox = (w - cell * COLS) / 2; oy = (h - cell * ROWS) / 2;
+    buildSprites(cell * 0.38);
     if (reduce) draw(start + 900);
   }
 
@@ -61,32 +88,23 @@
         for (var i = 0; i < ripples.length; i++) {
           var rp = ripples[i], age = t - rp.t0;
           var d = Math.hypot(cx - rp.x, cy - rp.y) - age * cell * 24;
-          boost += Math.max(0, 1 - Math.abs(d) / (cell * 2.4)) * (1 - age / 1.4);
+          boost += Math.max(0, 1 - Math.abs(d) / (cell * 1.3)) * (1 - age / 1.4);
         }
         var I = Math.min(1, on + boost * 0.9);
 
-        // grey version
-        var g = Math.round(235 - I * 190);                     // #ebebeb -> #2d2d2d
-        var grey = [g, g, g];
-        // color version
-        var hue = (c * S * 9 + r * S * 2 + t * 40) % 360;
-        var col = hsl(hue, 0.9, 0.55);
-        var off = [238, 238, 238];
-        var lit = [
-          off[0] + (col[0] - off[0]) * I,
-          off[1] + (col[1] - off[1]) * I,
-          off[2] + (col[2] - off[2]) * I
-        ];
-        var R = grey[0] + (lit[0] - grey[0]) * color;
-        var G = grey[1] + (lit[1] - grey[1]) * color;
-        var B = grey[2] + (lit[2] - grey[2]) * color;
-
-        if (color > 0.05 && I > 0.3) {                          // glow
-          ctx.fillStyle = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',' + (0.18 * I * color) + ')';
-          ctx.beginPath(); ctx.arc(cx, cy, rad * 2, 0, 6.2832); ctx.fill();
-        }
-        ctx.fillStyle = 'rgb(' + (R | 0) + ',' + (G | 0) + ',' + (B | 0) + ')';
+        // base dot: dark grey when lit (grey mode), plain light grey when off / in color mode
+        var g = 235 - I * 190 * (1 - color);                   // #ebebeb -> #2d2d2d
+        ctx.fillStyle = 'rgb(' + (g | 0) + ',' + (g | 0) + ',' + (g | 0) + ')';
         ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 6.2832); ctx.fill();
+
+        // color mode: the led itself lights up and glows
+        var lightUp = color * I;
+        if (lightUp > 0.02) {
+          var hue = (c * S * 9 + r * S * 2 + t * 40) % 360;
+          ctx.globalAlpha = lightUp;
+          ctx.drawImage(sprites[Math.floor(hue / 360 * HUES) % HUES], cx - spriteR / dpr, cy - spriteR / dpr, spriteR * 2 / dpr, spriteR * 2 / dpr);
+          ctx.globalAlpha = 1;
+        }
       }
     }
   }
