@@ -40,9 +40,9 @@
 <!-- app -->
 <div id="shell" class="shell" hidden>
   <header class="topbar">
-    <a class="lockup lockup-top" href="#overview" aria-label="fomo team home">
+    <a class="lockup lockup-top" href="#overview" aria-label="fomo home">
       <img src="/brand/eyes-blue.svg" alt="" class="lk-eyes on-light"><img src="/brand/wordmark-blue.svg" alt="fomo" class="lk-word on-light">
-      <img src="/brand/eyes-white.svg" alt="" class="lk-eyes on-dark"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word on-dark"><span class="lk-team">team</span>
+      <img src="/brand/eyes-white.svg" alt="" class="lk-eyes on-dark"><img src="/brand/wordmark-white.svg" alt="fomo" class="lk-word on-dark">
     </a>
     <nav class="tabs" id="tabs" aria-label="sections">
       <button type="button" data-view="overview">overview</button>
@@ -103,7 +103,7 @@
     <!-- ============ time ============ -->
     <section class="view" data-view="time">
       <div class="page-head">
-        <h2>time</h2>
+        <div><button type="button" class="back-link" data-go="overview">← overview</button><h2>time</h2></div>
         <div class="month-switch small">
           <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
           <span class="month-label"></span>
@@ -180,7 +180,7 @@
     <!-- ============ expenses ============ -->
     <section class="view" data-view="expenses">
       <div class="page-head">
-        <h2>expenses</h2>
+        <div><button type="button" class="back-link" data-go="overview">← overview</button><h2>expenses</h2></div>
         <div class="month-switch small">
           <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
           <span class="month-label"></span>
@@ -202,6 +202,7 @@
               <img id="drop-img" alt="receipt preview">
               <div class="drop-pdf" id="drop-pdf" hidden>pdf</div>
               <span class="drop-name" id="drop-name"></span>
+              <span class="scan-status" id="scan-status" role="status"></span>
               <button type="button" class="link" id="drop-clear">remove</button>
             </div>
           </label>
@@ -254,7 +255,7 @@
 
     <!-- ============ approvals (arya) ============ -->
     <section class="view admin-only" data-view="approvals">
-      <div class="page-head"><h2>approvals</h2></div>
+      <div class="page-head"><div><button type="button" class="back-link" data-go="overview">← overview</button><h2>approvals</h2></div></div>
       <div id="approval-list"></div>
       <div class="card">
         <div class="card-head"><h3>invoices to pay</h3></div>
@@ -275,7 +276,7 @@
     <!-- ============ team (arya) ============ -->
     <section class="view admin-only" data-view="team">
       <div class="page-head">
-        <h2>team</h2>
+        <div><button type="button" class="back-link" data-go="overview">← overview</button><h2>team</h2></div>
         <div class="month-switch small">
           <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
           <span class="month-label"></span>

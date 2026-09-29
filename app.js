@@ -421,10 +421,105 @@
       $('drop-img').hidden = !r.preview; if (r.preview) $('drop-img').src = r.preview;
       $('drop-pdf').hidden = !!r.preview;
       $('drop-name').textContent = file.name || 'receipt';
-      if (!$('merchant').value) $('merchant').focus();
+      scanReceipt(r);
     }).catch(function (e) { $('expense-err').textContent = e.message; });
   }
-  function clearReceipt() { receipt = null; $('receipt').value = ''; $('drop-empty').hidden = false; $('drop-full').hidden = true; $('drop-img').removeAttribute('src'); }
+
+  // ---------- receipt reading: AI on the server when connected, otherwise read the photo in the browser ----------
+  var scanId = 0;
+  function scanStatus(t, busy) { var n = $('scan-status'); n.textContent = t || ''; n.classList.toggle('busy', !!busy); }
+  function scanReceipt(r) {
+    var id = ++scanId;
+    scanStatus('reading receipt…', true);
+    api('POST', '/api/scan', { name: me, receipt: { data: r.data, type: r.type } })
+      .then(function (d) { return d.fields || {}; })
+      .catch(function () {                                   // not connected (or failed): read it here
+        if (r.type === 'application/pdf') return null;
+        return ocrText(r.data).then(parseReceiptText);
+      })
+      .then(function (f) {
+        if (id !== scanId || !receipt) return;                 // a newer receipt replaced this one
+        var n = f ? autofill(f) : 0;
+        scanStatus(n ? 'filled ' + n + (n === 1 ? ' field' : ' fields') + ' from the receipt, check them' : (f === null ? 'add the details below' : "couldn't read much, add the details below"));
+        if (!$('merchant').value) $('merchant').focus();
+      })
+      .catch(function () { if (id === scanId) scanStatus("couldn't read it, add the details below"); });
+  }
+  function mark(input) { input.classList.add('autofilled'); setTimeout(function () { input.classList.remove('autofilled'); }, 2600); }
+  // only fills fields that are still empty, so nothing typed gets overwritten
+  function autofill(f) {
+    var n = 0;
+    if (f.merchant && !$('merchant').value.trim()) { $('merchant').value = f.merchant; mark($('merchant')); n++; }
+    if (f.amount > 0 && !$('amount').value.trim()) { $('amount').value = Number(f.amount).toFixed(2); mark($('amount').parentNode); n++; }
+    if (f.date && /^\d{4}-\d{2}-\d{2}$/.test(f.date) && f.date <= today() && ($('xdate').value === today() || !$('xdate').value)) {
+      if (f.date !== $('xdate').value) { $('xdate').value = f.date; mark($('xdate')); } n++;
+    }
+    if (f.category && CATEGORIES.indexOf(f.category) > -1 && !category) {
+      var chip = $$('.chip', cats).filter(function (c) { return c.textContent === f.category; })[0]; if (chip) { chip.click(); n++; }
+    }
+    if (f.note && !$('xnote').value.trim()) { $('xnote').value = f.note; n++; }
+    return n;
+  }
+
+  // in-browser OCR (tesseract.js, loaded only when needed)
+  var tessLoading = null;
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (tessLoading) return tessLoading;
+    tessLoading = new Promise(function (res, rej) {
+      var sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      sc.onload = function () { res(window.Tesseract); }; sc.onerror = function () { tessLoading = null; rej(new Error('ocr unavailable')); };
+      document.head.appendChild(sc);
+    });
+    return tessLoading;
+  }
+  function ocrText(dataUrl) { return loadTesseract().then(function (T) { return T.recognize(dataUrl, 'eng'); }).then(function (o) { return (o && o.data && o.data.text) || ''; }); }
+
+  var CAT_WORDS = {
+    transport: /\b(uber|lyft|taxi|cab|metro|mta|subway|transit|parking|park|toll|shell|exxon|chevron|mobil|bp|sunoco|fuel|gas|airline|airlines|delta|jetblue|united|american air|southwest|spirit|amtrak|train|rail|citi ?bike|lime|bird|revel|car rental|hertz|avis|enterprise)\b/,
+    lodging: /\b(hotel|inn|suites?|marriott|hilton|hyatt|westin|sheraton|airbnb|motel|lodge|resort|hostel)\b/,
+    software: /\b(figma|notion|google|workspace|aws|amazon web services|github|slack|openai|anthropic|adobe|zoom|linear|vercel|dropbox|microsoft|subscription|saas|software|app store|apple\.com\/bill)\b/,
+    equipment: /\b(best buy|apple store|b&h|staples|office depot|micro center|newegg|hardware|electronics|monitor|keyboard|cable)\b/,
+    events: /\b(eventbrite|ticket|tickets|venue|conference|admission|luma|partiful|meetup|booth)\b/,
+    food: /\b(restaurant|cafe|caf[eé]|coffee|starbucks|dunkin|sweetgreen|chipotle|pizza|grill|bar|kitchen|bistro|deli|bakery|diner|sushi|burger|taco|doordash|uber ?eats|grubhub|seamless|caviar|food|lunch|dinner|breakfast|brunch|tip|gratuity|server|table)\b/
+  };
+  var MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+  function parseReceiptText(text) {
+    var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    var low = lines.map(function (l) { return l.toLowerCase(); });
+    var money = /(?:\$|usd\s?)?\s?(\d{1,5}(?:,\d{3})*[.,]\d{2})(?!\d)/g;
+    function amounts(l) { var out = [], m; money.lastIndex = 0; while ((m = money.exec(l))) out.push(parseFloat(m[1].replace(/,(?=\d{3})/g, '').replace(',', '.'))); return out; }
+    var f = {};
+    // total: last amount on a "total"-like line (not subtotal), else the largest amount on the receipt
+    var best = null;
+    low.forEach(function (l, i) {
+      if (/(^|\b)(grand total|total due|amount due|balance due|total|amount paid|you paid|charged)\b/.test(l) && !/sub\s?-?total|total savings|items?\s+total/.test(l)) {
+        var a = amounts(lines[i]); if (!a.length && lines[i + 1]) a = amounts(lines[i + 1]);
+        if (a.length) best = a[a.length - 1];
+      }
+    });
+    if (best == null) { var all = []; lines.forEach(function (l) { all = all.concat(amounts(l)); }); if (all.length) best = Math.max.apply(null, all); }
+    if (best > 0) f.amount = best;
+    // date
+    var yNow = new Date().getFullYear(), txt = low.join(' '), d = null, m;
+    if ((m = txt.match(/\b(20\d{2})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/))) d = [+m[1], +m[2], +m[3]];
+    else if ((m = txt.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))) d = [+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[1], +m[2]];
+    else if ((m = txt.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s+(20\d{2})\b/))) d = [+m[3], MONTHS[m[1]], +m[2]];
+    else if ((m = txt.match(/\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\.?,?\s+(20\d{2})\b/))) d = [+m[3], MONTHS[m[2]], +m[1]];
+    if (d && d[1] >= 1 && d[1] <= 12 && d[2] >= 1 && d[2] <= 31 && d[0] >= yNow - 2 && d[0] <= yNow) f.date = d[0] + '-' + pad(d[1]) + '-' + pad(d[2]);
+    // merchant: first line that reads like a name
+    for (var i = 0; i < Math.min(lines.length, 8); i++) {
+      var l = lines[i], lw = low[i];
+      if (/[a-z]{3,}/i.test(l) && !/receipt|invoice|order|welcome|thank|tel|phone|www\.|http|@|\d{3}[-.\s]\d{3}[-.\s]\d{4}|^\d+\s|street|st\.|ave|suite|date|time/.test(lw) && l.replace(/[^a-z]/gi, '').length >= 3) {
+        f.merchant = l.replace(/[^\w&' .-]/g, '').replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 60); break;
+      }
+    }
+    // category from keywords
+    for (var c in CAT_WORDS) { if (CAT_WORDS[c].test(txt)) { f.category = c; break; } }
+    return f;
+  }
+  function clearReceipt() { scanId++; scanStatus(''); receipt = null; $('receipt').value = ''; $('drop-empty').hidden = false; $('drop-full').hidden = true; $('drop-img').removeAttribute('src'); }
   $('receipt').addEventListener('change', function () { if (this.files[0]) setReceipt(this.files[0]); });
   $('drop-clear').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); clearReceipt(); });
   var drop = $('drop');
