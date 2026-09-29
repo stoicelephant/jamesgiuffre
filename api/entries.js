@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
       const raw = id && (await db.cmd(['HGET', db.ENTRIES, id]));
       if (!raw) return res.status(404).json({ error: 'entry not found' });
       const e = JSON.parse(raw);
-      if (e.name.toLowerCase() !== name) return res.status(403).json({ error: 'you can only delete your own entries' });
+      if (db.canon(e.name) !== db.member(name)) return res.status(403).json({ error: 'you can only delete your own entries' });
       if (e.invoiceId) return res.status(409).json({ error: 'already on a submitted invoice' });
       await db.cmd(['HDEL', db.ENTRIES, id]);
       return res.status(200).json({ ok: true });

@@ -25,10 +25,18 @@ async function call(path, body) {
 const TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
 // arya can see everyone's hours, pay, and invoices; everyone else only sees their own.
 const ADMIN = 'arya';
+// entries saved before the switch to first names ("Arya Toufanian", "Hammaad Sattar"...) map to the new names
+const ALIASES = { hammaad: 'hammad' };
+const canon = (n) => {
+  const s = String(n || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (TEAM.includes(s)) return s;
+  const first = s.split(' ')[0];
+  return TEAM.includes(first) ? first : ALIASES[first] || s;
+};
 const member = (n) => TEAM.find((t) => t.toLowerCase() === String(n || '').replace(/\s+/g, ' ').trim().toLowerCase()) || null;
 
 module.exports = {
-  TEAM, ADMIN, member,
+  TEAM, ADMIN, member, canon,
   ready: () => !!(URL_ && TOKEN),
   seen,
   cmd: async (c) => (await call('', c)).result,
@@ -37,7 +45,7 @@ module.exports = {
   ENTRIES: 'invoice:entries',
   INVOICES: 'invoice:invoices',
   SEQ: 'invoice:seq',
-  parseHash: (flat) => { const out = []; for (let i = 1; i < (flat || []).length; i += 2) { try { out.push(JSON.parse(flat[i])); } catch (e) {} } return out; },
+  parseHash: (flat) => { const out = []; for (let i = 1; i < (flat || []).length; i += 2) { try { const x = JSON.parse(flat[i]); if (x && x.name) x.name = canon(x.name); out.push(x); } catch (e) {} } return out; },
   clean: (s, n) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, n),
   body: (req) => { let b = req.body || {}; if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } } return b; }
 };
