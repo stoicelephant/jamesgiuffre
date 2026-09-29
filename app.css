@@ -408,3 +408,10 @@ body:not(.is-admin) .admin-only{display:none !important}
 .tbl.mini .muted-cell{font-weight:400;color:var(--muted);font-size:12px}
 .breakdown-foot{display:flex;justify-content:flex-end;margin-top:12px}
 @media print{.chev{display:none}}
+
+/* overview: "waiting on you" is arya-only; everyone else gets full-width spending */
+.grid2.solo{grid-template-columns:1fr}
+.grid2.solo > .card:first-child{padding-right:0}
+button.stand{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer}
+button.stand:last-child{border-bottom:0}
+button.stand:hover .t{color:var(--glow)}

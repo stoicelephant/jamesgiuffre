@@ -81,15 +81,13 @@
         <div class="stats" id="stats"></div>
       </div>
 
-      <div class="card review-card admin-only" id="review-card" hidden></div>
-
-      <div class="grid2">
+      <div class="grid2" id="overview-grid">
         <div class="card">
           <div class="card-head"><h3>spending by category</h3><span class="muted" id="cat-total"></span></div>
           <div class="bars" id="cat-bars"></div>
         </div>
-        <div class="card">
-          <div class="card-head"><h3>where things stand</h3></div>
+        <div class="card admin-only" id="standing-card">
+          <div class="card-head"><h3>waiting on you</h3><button type="button" class="link" data-go="approvals">open approvals →</button></div>
           <div class="standing" id="standing"></div>
         </div>
       </div>

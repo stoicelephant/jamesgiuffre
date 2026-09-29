@@ -178,20 +178,6 @@
       var d = el('div', 'stat' + (s[0] === 'owed to you' ? ' accent' : '')); d.appendChild(el('div', 'k', s[0])); d.appendChild(el('div', 'v', s[1])); d.appendChild(el('div', 's', s[2])); stats.appendChild(d);
     });
 
-    // arya: what needs review
-    var rc = $('review-card');
-    if (isAdmin) {
-      var pend = D.requests.filter(function (r) { return r.status === 'pending'; });
-      var toPay = D.requests.filter(function (r) { return r.status === 'approved'; }).length + D.invoices.filter(function (i) { return i.status !== 'paid'; }).length;
-      rc.hidden = !(pend.length || toPay);
-      rc.textContent = '';
-      var left = el('div');
-      left.appendChild(el('strong', null, pend.length ? pend.length + ' reimbursement ' + (pend.length === 1 ? 'request' : 'requests') + ' to review' : 'nothing to review'));
-      left.appendChild(el('p', null, (pend.length ? money(sum(pend, function (r) { return r.total; })) + ' waiting · ' : '') + toPay + ' ready to pay'));
-      var b = el('button', 'btn light small', 'review'); b.type = 'button'; b.addEventListener('click', function () { location.hash = 'approvals'; });
-      rc.appendChild(left); rc.appendChild(b);
-    }
-
     // category bars (one series, one hue, direct labels)
     var bars = $('cat-bars'); bars.textContent = '';
     var byCat = CATEGORIES.map(function (c) { return [c, sum(X.filter(function (x) { return x.category === c; }), function (x) { return x.amount; })]; })
@@ -207,30 +193,28 @@
       bars.appendChild(row);
     });
 
-    // where things stand
+    // arya only: what's waiting on him across the team
+    $('overview-grid').classList.toggle('solo', !isAdmin);
     var st = $('standing'); st.textContent = '';
-    function stand(t, d, right) {
-      var r = el('div', 'stand'), l = el('div'); l.appendChild(el('div', 't', t)); if (d) l.appendChild(el('div', 'd', d));
-      var rr = el('div', 'r'); (right || []).forEach(function (x) { rr.appendChild(typeof x === 'string' ? el('span', null, x) : x); });
-      r.appendChild(l); r.appendChild(rr); st.appendChild(r);
+    if (isAdmin) {
+      var stand = function (t, d, right) {
+        var r = el('button', 'stand'), l = el('div'); r.type = 'button'; r.addEventListener('click', function () { location.hash = 'approvals'; });
+        l.appendChild(el('div', 't', t)); if (d) l.appendChild(el('div', 'd', d));
+        var rr = el('div', 'r'); (right || []).forEach(function (x) { rr.appendChild(typeof x === 'string' ? el('span', null, x) : x); });
+        r.appendChild(l); r.appendChild(rr); st.appendChild(r);
+      };
+      var byOld = function (a, b) { return (a.submitted || '') < (b.submitted || '') ? -1 : 1; };
+      D.requests.filter(function (r) { return r.status === 'pending'; }).sort(byOld).forEach(function (r) {
+        stand(r.name + ' · reimbursement ' + r.number, 'to review · ' + r.lines.length + (r.lines.length === 1 ? ' item' : ' items') + ' · sent ' + fmtStamp(r.submitted), [money(r.total)]);
+      });
+      D.requests.filter(function (r) { return r.status === 'approved'; }).sort(byOld).forEach(function (r) {
+        stand(r.name + ' · reimbursement ' + r.number, 'approved, to pay · sent ' + fmtStamp(r.submitted), [money(r.total)]);
+      });
+      D.invoices.filter(function (i) { return i.status !== 'paid'; }).sort(byOld).forEach(function (i) {
+        stand(i.name + ' · invoice #' + i.number, 'to pay · ' + fmtH(i.hours) + ' hrs · sent ' + fmtStamp(i.submitted), [money(i.amount)]);
+      });
+      if (!st.children.length) st.appendChild(el('p', 'empty', 'nothing pending. all caught up.'));
     }
-    var unInv = E.filter(function (e) { return !e.invoiceId; });
-    if (unInv.length) {
-      var gb = el('button', 'btn ghost small', 'submit'); gb.type = 'button'; gb.addEventListener('click', function () { location.hash = 'time'; });
-      stand('time not invoiced', fmtH(sum(unInv, function (e) { return e.hours; })) + ' · ' + money(sum(unInv, function (e) { return e.hours * e.rate; })), [gb]);
-    }
-    mine(D.invoices).filter(function (i) { return i.month === ym; }).sort(byNewest).forEach(function (i) {
-      stand('invoice #' + i.number, 'sent ' + fmtStamp(i.submitted), [money(i.amount), pill(INV_STATUS, i.status || 'submitted')]);
-    });
-    var drafts = X.filter(function (x) { return x.status === 'unsubmitted' || x.status === 'rejected'; });
-    if (drafts.length) {
-      var xb = el('button', 'btn ghost small', 'send'); xb.type = 'button'; xb.addEventListener('click', function () { location.hash = 'expenses'; });
-      stand(drafts.length + (drafts.length === 1 ? ' expense' : ' expenses') + ' not sent', money(sum(drafts, function (x) { return x.amount; })), [xb]);
-    }
-    mine(D.requests).filter(function (r) { return ymOf(r.submitted) === ym || r.status === 'pending' || r.status === 'approved'; }).sort(byNewest).forEach(function (r) {
-      stand('reimbursement ' + r.number, r.lines.length + (r.lines.length === 1 ? ' item' : ' items') + ' · sent ' + fmtStamp(r.submitted) + (r.note ? ' · "' + r.note + '"' : ''), [money(r.total), pill(REQ_STATUS, r.status)]);
-    });
-    if (!st.children.length) st.appendChild(el('p', 'empty', 'all clear for ' + monthShort(ym) + '.'));
 
     // recent activity
     var feed = $('feed'); feed.textContent = '';
