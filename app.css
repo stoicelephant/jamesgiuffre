@@ -415,3 +415,17 @@ body:not(.is-admin) .admin-only{display:none !important}
 button.stand{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer}
 button.stand:last-child{border-bottom:0}
 button.stand:hover .t{color:var(--glow)}
+.stand-group{border-bottom:1px solid var(--line)}
+.stand-group:last-child{border-bottom:0}
+.stand-group button.stand{border-bottom:0;padding:12px 0}
+.stand-group:first-child button.stand{padding-top:0}
+.stand .who{display:flex;align-items:center;gap:12px;min-width:0}
+.stand .who .avatar{flex:none}
+.stand-group.open .chev{transform:rotate(90deg);color:var(--blue)}
+.stand-items{display:none;margin:0 0 14px 40px;padding-left:14px;box-shadow:inset 2px 0 0 var(--blue)}
+.stand-group.open .stand-items{display:block}
+.stand-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stand-item .t{font-weight:500}
+.stand-item .d{font-size:12px;color:var(--muted)}
+.stand-item .amt{font-variant-numeric:tabular-nums;white-space:nowrap}
+.stand-foot{padding-top:10px}

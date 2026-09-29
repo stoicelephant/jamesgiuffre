@@ -164,6 +164,7 @@
     if (isAdmin) { renderApprovals(); renderTeam(); }
   }
 
+  var openPeople = {};
   function renderOverview() {
     var E = inMonth(mine(D.entries)), X = inMonth(mine(D.expenses));
     var hrs = sum(E, function (e) { return e.hours; }), billed = sum(E, function (e) { return e.hours * e.rate; });
@@ -197,21 +198,42 @@
     $('overview-grid').classList.toggle('solo', !isAdmin);
     var st = $('standing'); st.textContent = '';
     if (isAdmin) {
-      var stand = function (t, d, right) {
-        var r = el('button', 'stand'), l = el('div'); r.type = 'button'; r.addEventListener('click', function () { location.hash = 'approvals'; });
-        l.appendChild(el('div', 't', t)); if (d) l.appendChild(el('div', 'd', d));
-        var rr = el('div', 'r'); (right || []).forEach(function (x) { rr.appendChild(typeof x === 'string' ? el('span', null, x) : x); });
-        r.appendChild(l); r.appendChild(rr); st.appendChild(r);
-      };
       var byOld = function (a, b) { return (a.submitted || '') < (b.submitted || '') ? -1 : 1; };
-      D.requests.filter(function (r) { return r.status === 'pending'; }).sort(byOld).forEach(function (r) {
-        stand(r.name + ' · reimbursement ' + r.number, 'to review · ' + r.lines.length + (r.lines.length === 1 ? ' item' : ' items') + ' · sent ' + fmtStamp(r.submitted), [money(r.total)]);
+      var items = [];
+      D.requests.forEach(function (r) {
+        if (r.status === 'pending') items.push({ who: r.name, kind: 'review', t: 'reimbursement ' + r.number, d: 'to review · ' + r.lines.length + (r.lines.length === 1 ? ' item' : ' items') + ' · sent ' + fmtStamp(r.submitted), amt: r.total, submitted: r.submitted });
+        else if (r.status === 'approved') items.push({ who: r.name, kind: 'payR', t: 'reimbursement ' + r.number, d: 'approved, to pay · sent ' + fmtStamp(r.submitted), amt: r.total, submitted: r.submitted });
       });
-      D.requests.filter(function (r) { return r.status === 'approved'; }).sort(byOld).forEach(function (r) {
-        stand(r.name + ' · reimbursement ' + r.number, 'approved, to pay · sent ' + fmtStamp(r.submitted), [money(r.total)]);
+      D.invoices.forEach(function (i) {
+        if (i.status !== 'paid') items.push({ who: i.name, kind: 'payI', t: 'invoice #' + i.number, d: 'to pay · ' + fmtH(i.hours) + ' hrs · ' + periodLabel(i) + ' · sent ' + fmtStamp(i.submitted), amt: i.amount, submitted: i.submitted });
       });
-      D.invoices.filter(function (i) { return i.status !== 'paid'; }).sort(byOld).forEach(function (i) {
-        stand(i.name + ' · invoice #' + i.number, 'to pay · ' + fmtH(i.hours) + ' hrs · sent ' + fmtStamp(i.submitted), [money(i.amount)]);
+      var people = {};
+      items.sort(byOld).forEach(function (it) { (people[it.who] = people[it.who] || []).push(it); });
+      Object.keys(people).forEach(function (who) {
+        var list = people[who];
+        var n = function (k) { return list.filter(function (x) { return x.kind === k; }).length; };
+        var rv = n('review'), pr = n('payR'), pi = n('payI'), parts = [];
+        if (rv) parts.push(rv + ' pending ' + (rv === 1 ? 'reimbursement' : 'reimbursements'));
+        if (pr) parts.push(pr + ' approved ' + (pr === 1 ? 'reimbursement' : 'reimbursements') + ' to pay');
+        if (pi) parts.push(pi + ' pending ' + (pi === 1 ? 'invoice' : 'invoices'));
+        var grp = el('div', 'stand-group' + (openPeople[who] ? ' open' : ''));
+        var head = el('button', 'stand'); head.type = 'button'; head.setAttribute('aria-expanded', String(!!openPeople[who]));
+        var l = el('div', 'who'); l.appendChild(el('span', 'avatar', who.charAt(0)));
+        var tx = el('div'); tx.appendChild(el('div', 't', who + ' has ' + parts.join(' and ').replace(/ and (?=.* and )/g, ', '))); tx.appendChild(el('div', 'd', 'oldest sent ' + fmtStamp(list[0].submitted))); l.appendChild(tx);
+        var rr = el('div', 'r'); rr.appendChild(el('span', null, money(sum(list, function (x) { return x.amt; })))); rr.appendChild(el('span', 'chev', '›'));
+        head.appendChild(l); head.appendChild(rr); grp.appendChild(head);
+        var body = el('div', 'stand-items');
+        list.forEach(function (it) {
+          var row = el('div', 'stand-item'), a = el('div');
+          a.appendChild(el('div', 't', it.t)); a.appendChild(el('div', 'd', it.d));
+          row.appendChild(a); row.appendChild(el('span', 'amt', money(it.amt))); body.appendChild(row);
+        });
+        var go = el('button', 'btn ghost small', 'review in approvals'); go.type = 'button';
+        go.addEventListener('click', function () { location.hash = 'approvals'; });
+        var gf = el('div', 'stand-foot'); gf.appendChild(go); body.appendChild(gf);
+        grp.appendChild(body);
+        head.addEventListener('click', function () { openPeople[who] = !openPeople[who]; grp.classList.toggle('open', openPeople[who]); head.setAttribute('aria-expanded', String(openPeople[who])); });
+        st.appendChild(grp);
       });
       if (!st.children.length) st.appendChild(el('p', 'empty', 'nothing pending. all caught up.'));
     }
