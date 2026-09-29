@@ -10,7 +10,7 @@
   };
   var LOCAL_E = 'inv.entries.local', LOCAL_I = 'inv.invoices.local';
   // The only names that can sign in (keep in sync with TEAM in api/_redis.js).
-  var TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan'];
+  var TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan', 'James Giuffre'];
   function member(n) { var k = String(n || '').replace(/\s+/g, ' ').trim().toLowerCase(); for (var i = 0; i < TEAM.length; i++) if (TEAM[i].toLowerCase() === k) return TEAM[i]; return null; }
 
   var me = member(store.get('inv.name')) || '';

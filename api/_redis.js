@@ -22,7 +22,7 @@ async function call(path, body) {
 }
 
 // The only names allowed on /invoice (keep in sync with TEAM in invoice.js).
-const TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan'];
+const TEAM = ['Arya Toufanian', 'Hammaad Sattar', 'Milo', 'Ballah', 'Golam Khan', 'James Giuffre'];
 const member = (n) => TEAM.find((t) => t.toLowerCase() === String(n || '').replace(/\s+/g, ' ').trim().toLowerCase()) || null;
 
 module.exports = {
