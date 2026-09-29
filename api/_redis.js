@@ -21,7 +21,7 @@ async function call(path, body) {
   return d;
 }
 
-// The only names allowed on /invoice (keep in sync with TEAM in invoice.js).
+// The only names allowed on /invoice (keep in sync with TEAM in app.js).
 const TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
 // arya can see everyone's hours, pay, and invoices; everyone else only sees their own.
 const ADMIN = 'arya';
@@ -45,6 +45,12 @@ module.exports = {
   ENTRIES: 'invoice:entries',
   INVOICES: 'invoice:invoices',
   SEQ: 'invoice:seq',
+  EXPENSES: 'invoice:expenses',
+  RECEIPTS: 'invoice:receipts',
+  REQUESTS: 'invoice:reimbursements',
+  RSEQ: 'invoice:rseq',
+  CATEGORIES: ['food', 'transport', 'lodging', 'software', 'equipment', 'events', 'other'],
+  money: (n) => Math.round(Number(n) * 100) / 100,
   parseHash: (flat) => { const out = []; for (let i = 1; i < (flat || []).length; i += 2) { try { const x = JSON.parse(flat[i]); if (x && x.name) x.name = canon(x.name); out.push(x); } catch (e) {} } return out; },
   clean: (s, n) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, n),
   body: (req) => { let b = req.body || {}; if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } } return b; }

@@ -2,146 +2,323 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>invoice · james giuffre</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>fomo team</title>
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#516AF6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23516AF6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="invoice.css">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="page">
-  <main class="inv">
-    <a class="back" href="/">← home</a>
 
-    <!-- sign in: just a name -->
-    <section id="login" class="login" hidden>
-      <h1>invoice</h1>
-      <p>who's logging hours?</p>
-      <form id="login-form" class="row" autocomplete="off">
-        <div class="combo">
-          <input id="login-name" type="text" placeholder="start typing your name" maxlength="60" autocomplete="off"
-                 role="combobox" aria-expanded="false" aria-controls="name-list" aria-autocomplete="list">
-          <ul id="name-list" class="combo-list" role="listbox" hidden></ul>
+<!-- sign in -->
+<div id="signin" class="signin" hidden>
+  <div class="signin-card">
+    <div class="wordmark">fomo <span>team</span></div>
+    <h1>who's this?</h1>
+    <form id="login-form" autocomplete="off">
+      <div class="combo">
+        <input id="login-name" type="text" placeholder="start typing your name" maxlength="40" autocomplete="off"
+               role="combobox" aria-expanded="false" aria-controls="name-list" aria-autocomplete="list">
+        <ul id="name-list" class="combo-list" role="listbox" hidden></ul>
+      </div>
+      <button class="btn primary wide" type="submit" id="login-go" disabled>continue</button>
+    </form>
+    <p class="hint" id="login-msg" role="status"></p>
+  </div>
+</div>
+
+<!-- app -->
+<div id="shell" class="shell" hidden>
+  <header class="topbar">
+    <div class="wordmark">fomo <span>team</span></div>
+    <nav class="tabs" id="tabs" aria-label="sections">
+      <button type="button" data-view="overview">overview</button>
+      <button type="button" data-view="time">time</button>
+      <button type="button" data-view="expenses">expenses</button>
+      <button type="button" data-view="approvals" class="admin-only">approvals<span class="badge" id="approvals-badge" hidden></span></button>
+      <button type="button" data-view="team" class="admin-only">team</button>
+    </nav>
+    <div class="me">
+      <span class="avatar" id="me-avatar"></span>
+      <span id="me-name"></span>
+      <button type="button" class="link" id="switch">switch</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ============ overview ============ -->
+    <section class="view" data-view="overview">
+      <div class="hero">
+        <div class="hero-top">
+          <div>
+            <p class="eyebrow" id="hello"></p>
+            <div class="month-switch">
+              <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
+              <h2 class="month-label"></h2>
+              <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button type="button" class="btn light" data-go="time">log time</button>
+            <button type="button" class="btn ghost-light" data-go="expenses">add expense</button>
+          </div>
         </div>
-        <button class="btn" type="submit" id="login-go" disabled>continue →</button>
-      </form>
-      <p class="msg" id="login-msg" role="status"></p>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="card review-card admin-only" id="review-card" hidden></div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h3>spending by category</h3><span class="muted" id="cat-total"></span></div>
+          <div class="bars" id="cat-bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>where things stand</h3></div>
+          <div class="standing" id="standing"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>recent</h3></div>
+        <ul class="feed" id="feed"></ul>
+      </div>
     </section>
 
-    <!-- logged in -->
-    <section id="app" hidden>
-      <div class="head">
-        <h1>invoice</h1>
-        <p class="who">logged in as <strong id="who"></strong> · <button class="link" id="switch" type="button">switch</button><span id="team-link" hidden> · <a href="/team">team view →</a></span></p>
+    <!-- ============ time ============ -->
+    <section class="view" data-view="time">
+      <div class="page-head">
+        <h2>time</h2>
+        <div class="month-switch small">
+          <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
+          <span class="month-label"></span>
+          <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
+        </div>
       </div>
 
-      <div class="block">
-        <h2>your rate</h2>
-        <label class="rate">
-          <span>$</span>
-          <input id="rate" type="number" min="0" max="10000" step="5" inputmode="decimal" placeholder="0">
-          <span class="muted">/ hour</span>
-        </label>
-      </div>
-
-      <form id="entry-form" class="block">
-        <h2>new entry</h2>
-        <div class="fields">
-          <label class="f date">
-            <span>date</span>
-            <input id="date" type="date" required>
-          </label>
-          <label class="f matter">
-            <span>subject matter</span>
-            <textarea id="matter" rows="1" maxlength="500" placeholder="e.g. drafted investor update, call with acme re: pilot" required></textarea>
-          </label>
-          <div class="f time">
+      <form class="card" id="entry-form" novalidate>
+        <div class="card-head"><h3>log time</h3>
+          <label class="rate"><span>rate</span><b>$</b><input id="rate" type="number" min="0" max="10000" step="5" inputmode="decimal" placeholder="0"><span>/hr</span></label>
+        </div>
+        <div class="form-grid">
+          <label class="field"><span>date</span><input id="date" type="date" required></label>
+          <label class="field grow"><span>what did you work on?</span><textarea id="matter" rows="1" maxlength="500" placeholder="e.g. drafted investor update"></textarea></label>
+        </div>
+        <div class="time-row">
+          <div class="field">
             <span>time</span>
             <div class="stepper">
               <button type="button" class="step" data-d="-0.25" aria-label="15 minutes less">−</button>
               <output id="hours">0:00</output>
               <button type="button" class="step" data-d="0.25" aria-label="15 minutes more">+</button>
-              <button type="button" class="link clear" id="clear-time">clear</button>
-              <label class="start">
-                <span>starting at</span>
-                <input id="start" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1p" maxlength="12" aria-label="start time (optional)">
-              </label>
-              <span class="range-preview" id="range-preview"></span>
-            </div>
-            <div class="chips">
-              <button type="button" class="chip" data-h="0.25">+15m</button>
-              <button type="button" class="chip" data-h="0.5">+30m</button>
-              <button type="button" class="chip" data-h="1">+1h</button>
-              <button type="button" class="chip" data-h="2">+2h</button>
-              <button type="button" class="chip" data-h="4">+4h</button>
             </div>
           </div>
+          <div class="chips">
+            <button type="button" class="chip" data-h="0.25">+15m</button>
+            <button type="button" class="chip" data-h="0.5">+30m</button>
+            <button type="button" class="chip" data-h="1">+1h</button>
+            <button type="button" class="chip" data-h="2">+2h</button>
+            <button type="button" class="chip" data-h="4">+4h</button>
+            <button type="button" class="link" id="clear-time">clear</button>
+          </div>
+          <label class="field start">
+            <span>starting at</span>
+            <input id="start" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1p" maxlength="12">
+          </label>
+          <span class="range-preview" id="range-preview"></span>
         </div>
-        <div class="submit-row">
+        <div class="form-foot">
           <span class="preview" id="preview"></span>
-          <button class="btn" type="submit" id="add">add entry</button>
+          <button class="btn primary" type="submit" id="add-entry">add entry</button>
         </div>
-        <p class="msg" id="msg" role="status"></p>
+        <p class="err" id="entry-err" role="status"></p>
       </form>
 
-      <div class="block">
-        <div class="list-head">
-          <h2>entries</h2>
-          <div class="filters">
-            <input id="month" type="month" aria-label="month">
-          </div>
-        </div>
-
-        <!-- invoice header, shown when printing -->
-        <div class="print-only print-head">
-          <div><strong>invoice</strong></div>
-          <div id="print-meta"></div>
-        </div>
-
+      <div class="card">
+        <div class="card-head"><h3>entries</h3><span class="muted month-label"></span></div>
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th class="c-date">date</th><th class="c-who">who</th><th>subject matter</th><th class="num">time</th><th class="num c-rate">rate</th><th class="num">amount</th><th class="c-x"></th></tr>
-            </thead>
-            <tbody id="rows"></tbody>
-            <tfoot>
-              <tr><td class="c-date">total</td><td class="c-who"></td><td></td><td class="num" id="t-hours">0:00</td><td class="num c-rate"></td><td class="num" id="t-amount">$0.00</td><td class="c-x"></td></tr>
-            </tfoot>
+          <table class="tbl">
+            <thead><tr><th>date</th><th>work</th><th class="num">time</th><th class="num hide-sm">rate</th><th class="num">amount</th><th class="act"></th></tr></thead>
+            <tbody id="entry-rows"></tbody>
+            <tfoot><tr><td>total</td><td></td><td class="num" id="t-hours"></td><td class="hide-sm"></td><td class="num" id="t-amount"></td><td></td></tr></tfoot>
           </table>
-          <p class="empty" id="empty">no entries for this month yet.</p>
+          <p class="empty" id="entry-empty">nothing logged this month yet.</p>
         </div>
-
-        <div class="actions">
-          <span class="sync" id="sync"></span>
+        <div class="submit-bar" id="invoice-bar">
+          <p id="invoice-sum"></p>
+          <button class="btn primary" type="button" id="submit-invoice">submit invoice</button>
         </div>
-
-        <div class="submit-inv" id="submit-box">
-          <p class="submit-sum" id="submit-sum"></p>
-          <button class="btn accent" type="button" id="submit-inv">submit invoice</button>
-        </div>
-        <p class="msg" id="inv-msg" role="status"></p>
       </div>
 
-      <div class="block invoices">
-        <h2>submitted invoices</h2>
+      <div class="card">
+        <div class="card-head"><h3>invoices</h3></div>
         <div class="table-wrap">
-          <table class="inv-list">
-            <thead><tr><th class="c-date">no.</th><th class="c-who">who</th><th>period</th><th class="num">time</th><th class="num">amount</th><th class="num c-sub">submitted</th><th class="c-x"></th></tr></thead>
-            <tbody id="inv-rows"></tbody>
+          <table class="tbl">
+            <thead><tr><th>no.</th><th>period</th><th class="num">time</th><th class="num">amount</th><th>status</th><th class="act"></th></tr></thead>
+            <tbody id="invoice-rows"></tbody>
           </table>
-          <p class="empty" id="inv-empty">no invoices submitted yet.</p>
+          <p class="empty" id="invoice-empty">no invoices yet.</p>
         </div>
       </div>
     </section>
-  </main>
 
+    <!-- ============ expenses ============ -->
+    <section class="view" data-view="expenses">
+      <div class="page-head">
+        <h2>expenses</h2>
+        <div class="month-switch small">
+          <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
+          <span class="month-label"></span>
+          <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
+        </div>
+      </div>
+
+      <form class="card" id="expense-form" novalidate>
+        <div class="card-head"><h3>add expense</h3></div>
+        <div class="exp-grid">
+          <label class="drop" id="drop">
+            <input id="receipt" type="file" accept="image/*,application/pdf" hidden>
+            <div class="drop-empty" id="drop-empty">
+              <span class="drop-icon" aria-hidden="true">＋</span>
+              <strong>upload receipt</strong>
+              <span>photo or pdf, or drop it here</span>
+            </div>
+            <div class="drop-full" id="drop-full" hidden>
+              <img id="drop-img" alt="receipt preview">
+              <div class="drop-pdf" id="drop-pdf" hidden>pdf</div>
+              <span class="drop-name" id="drop-name"></span>
+              <button type="button" class="link" id="drop-clear">remove</button>
+            </div>
+          </label>
+          <div class="exp-fields">
+            <div class="form-grid">
+              <label class="field grow"><span>where</span><input id="merchant" type="text" maxlength="80" placeholder="e.g. uber, sweetgreen"></label>
+              <label class="field amount"><span>amount</span><div class="money-in"><b>$</b><input id="amount" type="text" inputmode="decimal" placeholder="0.00"></div></label>
+              <label class="field"><span>date</span><input id="xdate" type="date"></label>
+            </div>
+            <div class="field">
+              <span>category</span>
+              <div class="cats" id="cats" role="radiogroup" aria-label="category"></div>
+            </div>
+            <label class="field"><span>note <em>optional</em></span><input id="xnote" type="text" maxlength="300" placeholder="who it was with, what it was for"></label>
+          </div>
+        </div>
+        <div class="form-foot">
+          <span class="preview" id="receipt-hint">receipts are optional but help arya approve faster</span>
+          <button class="btn primary" type="submit" id="add-expense">add expense</button>
+        </div>
+        <p class="err" id="expense-err" role="status"></p>
+      </form>
+
+      <div class="card">
+        <div class="card-head"><h3>this month</h3><span class="muted month-label"></span></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th class="chk"><input type="checkbox" id="check-all" aria-label="select all"></th><th>date</th><th>where</th><th class="hide-sm">category</th><th class="num">amount</th><th class="hide-sm">status</th><th class="act"></th></tr></thead>
+            <tbody id="expense-rows"></tbody>
+          </table>
+          <p class="empty" id="expense-empty">no expenses this month.</p>
+        </div>
+        <div class="submit-bar" id="reimb-bar">
+          <p id="reimb-sum"></p>
+          <button class="btn primary" type="button" id="submit-reimb">request reimbursement</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>reimbursement requests</h3></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>no.</th><th>sent</th><th class="num">items</th><th class="num">total</th><th>status</th></tr></thead>
+            <tbody id="request-rows"></tbody>
+          </table>
+          <p class="empty" id="request-empty">no requests yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ approvals (arya) ============ -->
+    <section class="view admin-only" data-view="approvals">
+      <div class="page-head"><h2>approvals</h2></div>
+      <div id="approval-list"></div>
+      <div class="card">
+        <div class="card-head"><h3>invoices to pay</h3></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>no.</th><th>who</th><th>period</th><th class="num">amount</th><th>status</th><th class="act"></th></tr></thead>
+            <tbody id="pay-rows"></tbody>
+          </table>
+          <p class="empty" id="pay-empty">no invoices waiting.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>history</h3></div>
+        <ul class="feed" id="history"></ul>
+      </div>
+    </section>
+
+    <!-- ============ team (arya) ============ -->
+    <section class="view admin-only" data-view="team">
+      <div class="page-head">
+        <h2>team</h2>
+        <div class="month-switch small">
+          <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
+          <span class="month-label"></span>
+          <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>by person</h3><span class="muted">tap a name to filter</span></div>
+        <div class="table-wrap">
+          <table class="tbl team">
+            <thead><tr><th>name</th><th class="num">time</th><th class="num">billed</th><th class="num">expenses</th><th class="num">paid out</th><th class="num">outstanding</th></tr></thead>
+            <tbody id="team-rows"></tbody>
+            <tfoot id="team-foot"></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>time</h3><span class="muted" id="team-filter-label"></span></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>date</th><th>who</th><th>work</th><th class="num">time</th><th class="num">amount</th><th></th></tr></thead>
+            <tbody id="team-entries"></tbody>
+          </table>
+          <p class="empty" id="team-entries-empty">no time logged.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>expenses</h3></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>date</th><th>who</th><th>where</th><th class="hide-sm">category</th><th class="num">amount</th><th class="hide-sm">status</th><th class="act"></th></tr></thead>
+            <tbody id="team-expenses"></tbody>
+          </table>
+          <p class="empty" id="team-expenses-empty">no expenses.</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="foot-status" id="sync"></p>
+  </main>
 </div>
+
+<!-- receipt viewer -->
+<div class="viewer" id="viewer" hidden>
+  <div class="viewer-box">
+    <button type="button" class="viewer-close" id="viewer-close" aria-label="close">×</button>
+    <img id="viewer-img" alt="receipt">
+    <iframe id="viewer-pdf" title="receipt" hidden></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <section id="print-invoice" class="print-invoice" aria-hidden="true"></section>
-<script src="site.js"></script>
-<script src="invoice.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 // Submit an invoice: bundles one person's not-yet-invoiced entries for a month.
 // GET  /api/invoices?name=..        -> { invoices }  (your own; arya gets everyone's)
 // POST /api/invoices {name, month}  -> { invoice }   (month = "YYYY-MM")
+// PATCH /api/invoices {name: 'arya', id, status: 'paid' | 'submitted'} -> { invoice }   (arya marks paid)
 const crypto = require('crypto');
 const db = require('./_redis');
 
@@ -35,6 +36,7 @@ module.exports = async (req, res) => {
         id: crypto.randomUUID(),
         number: String(seq).padStart(4, '0'),
         name, month, hours, amount,
+        status: 'submitted',
         submitted: new Date().toISOString(),
         lines: mine.map((e) => ({ entryId: e.id, date: e.date, matter: e.matter, hours: e.hours, start: e.start || '', rate: e.rate, amount: Math.round(e.hours * e.rate * 100) / 100 }))
       };
@@ -44,7 +46,22 @@ module.exports = async (req, res) => {
       return res.status(201).json({ invoice });
     }
 
-    res.setHeader('Allow', 'GET, POST');
+    if (req.method === 'PATCH') {
+      const b = db.body(req);
+      if (db.member(b.name) !== db.ADMIN) return res.status(403).json({ error: 'only arya can update invoices' });
+      const status = String(b.status || '');
+      if (!['paid', 'submitted'].includes(status)) return res.status(400).json({ error: 'bad status' });
+      const raw = await db.cmd(['HGET', db.INVOICES, String(b.id || '')]);
+      if (!raw) return res.status(404).json({ error: 'invoice not found' });
+      const inv = JSON.parse(raw);
+      inv.status = status;
+      if (status === 'paid') inv.paidAt = new Date().toISOString(); else delete inv.paidAt;
+      await db.cmd(['HSET', db.INVOICES, inv.id, JSON.stringify(inv)]);
+      inv.name = db.canon(inv.name);
+      return res.status(200).json({ invoice: inv });
+    }
+
+    res.setHeader('Allow', 'GET, POST, PATCH');
     return res.status(405).json({ error: 'method not allowed' });
   } catch (err) {
     return res.status(500).json({ error: 'could not reach storage, try again' });

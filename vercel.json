@@ -1,5 +1,8 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/team", "destination": "/invoice#team", "permanent": false }
+  ],
   "headers": [
     { "source": "/invoice", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
   ]
