@@ -3,6 +3,8 @@
 (function () {
   var vids = [].slice.call(document.querySelectorAll('.vid video'));
   function label(v) {
+    var pp = v.parentNode.querySelector('.pp');
+    if (pp) { pp.textContent = v.paused ? '▶' : '❚❚'; pp.setAttribute('aria-label', v.paused ? 'play video' : 'pause video'); }
     var b = v.parentNode.querySelector('.sound'); if (!b) return;
     var manual = !v.hasAttribute('autoplay');
     var txt, aria;
@@ -35,6 +37,11 @@
     v.addEventListener('pause', function () { label(v); });
     var b = v.parentNode.querySelector('.sound');
     if (b) b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    var pp = v.parentNode.querySelector('.pp');
+    if (pp) pp.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (v.paused) play(v); else v.pause();
+    });
     label(v);
   });
 })();
