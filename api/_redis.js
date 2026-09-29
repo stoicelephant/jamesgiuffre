@@ -1,6 +1,14 @@
 // Tiny Upstash Redis REST client (files starting with _ are not deployed as endpoints).
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercel may add a custom prefix to these names (e.g. STORAGE_KV_REST_API_URL), so match on the ending.
+function pick(ends, avoid) {
+  const keys = Object.keys(process.env).filter((k) => ends.some((e) => k.endsWith(e)) && !(avoid && k.includes(avoid)) && process.env[k]);
+  keys.sort((a, b) => a.length - b.length);            // prefer the plain name when several exist
+  return keys.length ? process.env[keys[0]] : undefined;
+}
+const URL_ = pick(['KV_REST_API_URL', 'REDIS_REST_URL']);
+const TOKEN = pick(['KV_REST_API_TOKEN', 'REDIS_REST_TOKEN'], 'READ_ONLY');
+// names only (never values), to help debug a missing connection
+const seen = () => Object.keys(process.env).filter((k) => /KV_|REDIS|UPSTASH/.test(k)).sort();
 
 async function call(path, body) {
   const r = await fetch(URL_ + path, {
@@ -20,6 +28,7 @@ const member = (n) => TEAM.find((t) => t.toLowerCase() === String(n || '').repla
 module.exports = {
   TEAM, member,
   ready: () => !!(URL_ && TOKEN),
+  seen,
   cmd: async (c) => (await call('', c)).result,
   // several commands in one request, all-or-nothing
   multi: async (cmds) => (await call('/multi-exec', cmds)).map((x) => { if (x.error) throw new Error(x.error); return x.result; }),

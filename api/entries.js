@@ -7,7 +7,7 @@ const db = require('./_redis');
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  if (!db.ready()) return res.status(503).json({ error: 'storage not connected' });
+  if (!db.ready()) return res.status(503).json({ error: 'storage not connected', envNames: db.seen() });
 
   try {
     if (req.method === 'GET') {
