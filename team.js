@@ -12,6 +12,20 @@
   function fmtDate(d) { var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).toLowerCase(); }
   function fmtStamp(iso) { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toLowerCase(); }
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  // "1–4p", "11:30a–2p": the clock range for an entry that has a start time
+  function fmtRange(start, h) {
+    if (!start) return '';
+    var p = start.split(':'), s = (+p[0]) * 60 + (+p[1]), e = (s + Math.round(h * 60)) % 1440;
+    function part(m) { var hh = Math.floor(m / 60), mm = m % 60, h12 = hh % 12 || 12; return h12 + (mm ? ':' + String(mm).padStart(2, '0') : ''); }
+    function ap(m) { return m < 720 ? 'a' : 'p'; }
+    return ap(s) === ap(e) ? part(s) + '–' + part(e) + ap(e) : part(s) + ap(s) + '–' + part(e) + ap(e);
+  }
+  // time cell: hours, with the clock range underneath when there is one
+  function timeCell(h, start) {
+    var c = el('td', 'num', fmtH(h));
+    if (start) { c.appendChild(el('span', 'range', fmtRange(start, h))); }
+    return c;
+  }
   function thisMonth() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 
   if (me !== 'arya') { $('denied').hidden = false; return; }
@@ -65,7 +79,7 @@
       tr.appendChild(el('td', 'c-date', fmtDate(e.date)));
       tr.appendChild(el('td', 'c-who', e.name));
       tr.appendChild(el('td', 'matter', e.matter));
-      tr.appendChild(el('td', 'num', fmtH(e.hours)));
+      tr.appendChild(timeCell(e.hours, e.start));
       tr.appendChild(el('td', 'num c-rate', money(e.rate)));
       tr.appendChild(el('td', 'num', money(e.hours * e.rate)));
       var x = el('td', 'c-x'); if (e.invoiceId) x.appendChild(el('span', 'tag', '#' + e.invoiceNumber)); tr.appendChild(x);
@@ -115,7 +129,7 @@
       var tr = el('tr');
       tr.appendChild(el('td', 'c-date', fmtDate(l.date)));
       tr.appendChild(el('td', 'matter', l.matter));
-      tr.appendChild(el('td', 'num', fmtH(l.hours)));
+      tr.appendChild(timeCell(l.hours, l.start));
       tr.appendChild(el('td', 'num', money(l.rate)));
       tr.appendChild(el('td', 'num', money(l.amount)));
       tb.appendChild(tr);
@@ -134,8 +148,8 @@
   $('print').addEventListener('click', function () { document.body.classList.remove('print-inv'); window.print(); });
   $('csv').addEventListener('click', function () {
     var q = function (v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var lines = [['date', 'name', 'subject matter', 'hours', 'rate', 'amount', 'invoice'].join(',')];
-    visible().forEach(function (e) { lines.push([e.date, e.name, e.matter, e.hours.toFixed(2), e.rate.toFixed(2), (e.hours * e.rate).toFixed(2), e.invoiceNumber ? '#' + e.invoiceNumber : ''].map(q).join(',')); });
+    var lines = [['date', 'name', 'subject matter', 'hours', 'time of day', 'rate', 'amount', 'invoice'].join(',')];
+    visible().forEach(function (e) { lines.push([e.date, e.name, e.matter, e.hours.toFixed(2), fmtRange(e.start, e.hours), e.rate.toFixed(2), (e.hours * e.rate).toFixed(2), e.invoiceNumber ? '#' + e.invoiceNumber : ''].map(q).join(',')); });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
     a.download = 'team-hours-' + (sel.value || 'everyone') + '-' + ($('month').value || 'all-time') + '.csv';

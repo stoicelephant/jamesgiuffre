@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
         number: String(seq).padStart(4, '0'),
         name, month, hours, amount,
         submitted: new Date().toISOString(),
-        lines: mine.map((e) => ({ entryId: e.id, date: e.date, matter: e.matter, hours: e.hours, rate: e.rate, amount: Math.round(e.hours * e.rate * 100) / 100 }))
+        lines: mine.map((e) => ({ entryId: e.id, date: e.date, matter: e.matter, hours: e.hours, start: e.start || '', rate: e.rate, amount: Math.round(e.hours * e.rate * 100) / 100 }))
       };
       const cmds = [['HSET', db.INVOICES, invoice.id, JSON.stringify(invoice)]];
       mine.forEach((e) => cmds.push(['HSET', db.ENTRIES, e.id, JSON.stringify(Object.assign({}, e, { invoiceId: invoice.id, invoiceNumber: invoice.number }))]));

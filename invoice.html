@@ -66,6 +66,11 @@
               <output id="hours">0:00</output>
               <button type="button" class="step" data-d="0.25" aria-label="15 minutes more">+</button>
               <button type="button" class="link clear" id="clear-time">clear</button>
+              <label class="start">
+                <span>starting at</span>
+                <input id="start" type="time" step="900" aria-label="start time (optional)">
+              </label>
+              <span class="range-preview" id="range-preview"></span>
             </div>
             <div class="chips">
               <button type="button" class="chip" data-h="0.25">+15m</button>

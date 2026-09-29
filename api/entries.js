@@ -30,7 +30,9 @@ module.exports = async (req, res) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'bad date' });
       if (!(hours >= 0.25 && hours <= 24) || Math.round(hours * 4) !== hours * 4) return res.status(400).json({ error: 'time must be in 15 minute steps' });
       if (!(rate >= 0 && rate <= 10000)) return res.status(400).json({ error: 'bad rate' });
-      const entry = { id: crypto.randomUUID(), name, date, matter, hours, rate: Math.round(rate * 100) / 100, created: new Date().toISOString() };
+      const start = String(b.start || '');
+      if (start && !(/^([01]\d|2[0-3]):(00|15|30|45)$/.test(start))) return res.status(400).json({ error: 'start time must be on a 15 minute mark' });
+      const entry = { id: crypto.randomUUID(), name, date, matter, hours, start, rate: Math.round(rate * 100) / 100, created: new Date().toISOString() };
       await db.cmd(['HSET', db.ENTRIES, entry.id, JSON.stringify(entry)]);
       return res.status(201).json({ entry });
     }
