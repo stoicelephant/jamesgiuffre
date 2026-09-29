@@ -35,6 +35,7 @@
   function toast(t) { var n = $('toast'); n.textContent = t; n.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { n.classList.remove('show'); }, 2600); }
 
   // two taps to confirm, no pop-up dialogs
+  function disarm(btn) { if (btn.dataset.armed) { delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent = btn.dataset.orig; } }
   function armed(btn, label, ms) {
     if (btn.dataset.armed) { delete btn.dataset.armed; btn.classList.remove('armed'); return true; }
     var orig = btn.textContent;
@@ -318,7 +319,6 @@
         D.entries.push(d.entry);
         $('start').value = st ? niceTime(endTime(st, h)) : '';      // next entry starts where this one ended
         $('matter').value = ''; grow($('matter')); setHours(0);
-        if (ymOf(date) !== ym) ym = ymOf(date);
         render();
       })
       .catch(function (x) { err.textContent = x.message; })
@@ -326,7 +326,7 @@
   });
 
   function renderTime() {
-    var E = inMonth(mine(D.entries)).sort(byDateDesc), tb = $('entry-rows'); tb.textContent = '';
+    var E = mine(D.entries).filter(function (e) { return !e.invoiceId; }).sort(byDateDesc), tb = $('entry-rows'); tb.textContent = '';
     E.forEach(function (e) {
       var tr = el('tr');
       tr.appendChild(el('td', null, fmtDate(e.date)));
@@ -357,20 +357,21 @@
     var un = E.filter(function (e) { return !e.invoiceId; }), sumP = $('invoice-sum'), sb = $('submit-invoice');
     sumP.textContent = '';
     if (un.length) {
-      sumP.append(un.length + ' new ' + (un.length === 1 ? 'entry' : 'entries') + ' for ' + monthShort(ym) + ': ', el('strong', null, fmtH(sum(un, function (e) { return e.hours; })) + ' · ' + money(sum(un, function (e) { return e.hours * e.rate; }))));
+      sumP.append(un.length + (un.length === 1 ? ' entry' : ' entries') + ' to invoice: ', el('strong', null, fmtH(sum(un, function (e) { return e.hours; })) + ' · ' + money(sum(un, function (e) { return e.hours * e.rate; }))));
       sb.disabled = false;
-    } else { sumP.textContent = 'nothing new to invoice for ' + monthShort(ym) + '.'; sb.disabled = true; }
+    } else { sumP.textContent = 'nothing new to invoice.'; sb.disabled = true; disarm(sb); }
 
     var inv = mine(D.invoices).sort(byNewest), ib = $('invoice-rows'); ib.textContent = '';
     inv.forEach(function (i) {
       var tr = el('tr');
       tr.appendChild(el('td', null, '#' + i.number));
-      tr.appendChild(el('td', null, monthLabel(i.month)));
-      tr.appendChild(el('td', 'num', fmtH(i.hours)));
+      tr.appendChild(el('td', null, periodLabel(i)));
+      tr.appendChild(el('td', 'num hide-sm', fmtH(i.hours)));
       tr.appendChild(el('td', 'num', money(i.amount)));
       var sc = el('td'); sc.appendChild(pill(INV_STATUS, i.status || 'submitted')); tr.appendChild(sc);
-      var act = el('td', 'act'), p = el('button', 'link', 'print'); p.type = 'button'; p.addEventListener('click', function () { printInvoice(i); }); act.appendChild(p); tr.appendChild(act);
+      tr.appendChild(el('td', 'act'));
       ib.appendChild(tr);
+      expandable(tr, 'i' + i.id, 6, function () { return invoiceDetail(i); });
     });
     $('invoice-empty').hidden = inv.length > 0;
   }
@@ -378,7 +379,7 @@
     var b = $('submit-invoice');
     if (!armed(b, 'tap again to send to arya')) return;
     b.disabled = true;
-    api('POST', '/api/invoices', { name: me, month: ym })
+    api('POST', '/api/invoices', { name: me })
       .then(function (d) { toast('invoice #' + d.invoice.number + ' sent to arya'); return load(); })
       .catch(function (x) { toast(x.message); render(); });
   });
@@ -584,7 +585,6 @@
         .then(function (d) {
           D.expenses = D.expenses.map(function (o) { return o.id === d.expense.id ? d.expense : o; });
           endEdit();
-          if (ymOf(date) !== ym) ym = ymOf(date);
           toast('saved ' + merchant + ' · ' + money(amount));
           render();
         })
@@ -599,7 +599,6 @@
         $('merchant').value = ''; $('amount').value = ''; $('xnote').value = ''; clearReceipt();
         setCategory('');
         selected[d.expense.id] = true;
-        if (ymOf(date) !== ym) ym = ymOf(date);
         toast('added ' + merchant + ' · ' + money(amount));
         render();
       })
@@ -612,8 +611,8 @@
     var b = el('button', 'rc', 'receipt'); b.type = 'button'; b.addEventListener('click', function () { openReceipt(x); }); return b;
   }
   function renderExpenses() {
-    var X = inMonth(mine(D.expenses)).sort(byDateDesc), tb = $('expense-rows'); tb.textContent = '';
-    Object.keys(selected).forEach(function (id) { var x = D.expenses.filter(function (e) { return e.id === id; })[0]; if (!x || !selectable(x) || ymOf(x.date) !== ym) delete selected[id]; });
+    var X = mine(D.expenses).filter(selectable).sort(byDateDesc), tb = $('expense-rows'); tb.textContent = '';
+    Object.keys(selected).forEach(function (id) { var x = D.expenses.filter(function (e) { return e.id === id; })[0]; if (!x || !selectable(x)) delete selected[id]; });
     X.forEach(function (x) {
       var tr = el('tr');
       var c0 = el('td', 'chk');
@@ -661,10 +660,12 @@
       var tr = el('tr');
       tr.appendChild(el('td', null, r.number));
       var sent = el('td', null, fmtStamp(r.submitted)); if (r.note) sent.appendChild(el('span', 'sub', 'arya: ' + r.note)); tr.appendChild(sent);
-      tr.appendChild(el('td', 'num', String(r.lines.length)));
+      tr.appendChild(el('td', 'num hide-sm', String(r.lines.length)));
       tr.appendChild(el('td', 'num', money(r.total)));
       var sc = el('td'); sc.appendChild(pill(REQ_STATUS, r.status)); tr.appendChild(sc);
+      tr.appendChild(el('td', 'act'));
       rb.appendChild(tr);
+      expandable(tr, 'r' + r.id, 6, function () { return requestDetail(r); });
     });
     $('request-empty').hidden = R.length > 0;
   }
@@ -673,12 +674,12 @@
     p.textContent = '';
     var open = X.filter(selectable);
     if (picked.length) { p.append(picked.length + ' selected: ', el('strong', null, money(sum(picked, function (x) { return x.amount; })))); b.disabled = false; }
-    else { p.textContent = open.length ? 'select expenses to send to arya.' : 'nothing waiting to be sent.'; b.disabled = true; }
+    else { p.textContent = open.length ? 'select expenses to send to arya.' : 'nothing waiting to be sent.'; b.disabled = true; disarm(b); }
     $('check-all').checked = open.length > 0 && open.every(function (x) { return selected[x.id]; });
   }
   $('check-all').addEventListener('change', function () {
     var on = this.checked;
-    inMonth(mine(D.expenses)).filter(selectable).forEach(function (x) { if (on) selected[x.id] = true; else delete selected[x.id]; });
+    mine(D.expenses).filter(selectable).forEach(function (x) { if (on) selected[x.id] = true; else delete selected[x.id]; });
     renderExpenses();
   });
   $('submit-reimb').addEventListener('click', function () {
@@ -690,6 +691,79 @@
       .then(function (d) { selected = {}; toast(d.request.number + ' sent to arya · ' + money(d.request.total)); return load(); })
       .catch(function (x) { toast(x.message); render(); });
   });
+
+  // ---------- tap a row for its breakdown ----------
+  var opened = {};
+  function expandable(tr, id, cols, build) {
+    tr.classList.add('click'); tr.tabIndex = 0; tr.setAttribute('aria-expanded', 'false');
+    var chev = el('span', 'chev', '›'); tr.lastChild.appendChild(chev);
+    var dr = el('tr', 'detail'), td = el('td'); td.colSpan = cols; dr.appendChild(td);
+    function show(on) {
+      opened[id] = on; tr.classList.toggle('open', on); tr.setAttribute('aria-expanded', String(on));
+      td.textContent = ''; if (on) td.appendChild(build());
+      if (on) tr.after(dr); else dr.remove();
+    }
+    tr.addEventListener('click', function (e) { if (e.target.closest('button,a,input')) return; show(!opened[id]); });
+    tr.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target === tr) { e.preventDefault(); show(!opened[id]); } });
+    if (opened[id]) show(true);
+  }
+  function periodLabel(i) {
+    var ds = (i.lines || []).map(function (l) { return l.date; }).sort();
+    var a = i.from || ds[0], b = i.to || ds[ds.length - 1];
+    if (!a) return monthLabel(i.month);
+    return a === b ? fmtDate(a) : fmtDate(a) + ' – ' + fmtDate(b);
+  }
+  function steps(list) {
+    var t = el('ol', 'timeline');
+    list.forEach(function (s) { if (!s) return; var li = el('li', s[2] ? 'bad' : null); li.appendChild(el('b', null, s[0])); li.appendChild(el('span', null, fmtStamp(s[1]))); t.appendChild(li); });
+    return t;
+  }
+  function invoiceDetail(i) {
+    var box = el('div', 'breakdown');
+    box.appendChild(steps([['submitted', i.submitted], i.paidAt ? ['paid', i.paidAt] : null]));
+    var tbl = el('table', 'tbl mini'), tb = el('tbody');
+    i.lines.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (l) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, fmtDate(l.date)));
+      tr.appendChild(el('td', 'work', l.matter));
+      var tc = el('td', 'num', fmtH(l.hours)); if (l.start) tc.appendChild(el('span', 'sub', fmtRange(l.start, l.hours))); tr.appendChild(tc);
+      tr.appendChild(el('td', 'num hide-sm', money(l.rate) + '/hr'));
+      tr.appendChild(el('td', 'num', money(l.amount)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    var tf = el('tfoot'), fr = el('tr');
+    fr.appendChild(el('td', null, 'total')); fr.appendChild(el('td')); fr.appendChild(el('td', 'num', fmtH(i.hours))); fr.appendChild(el('td', 'hide-sm')); fr.appendChild(el('td', 'num', money(i.amount)));
+    tf.appendChild(fr); tbl.appendChild(tf); box.appendChild(tbl);
+    var foot = el('div', 'breakdown-foot'), p = el('button', 'btn ghost small', 'print / save pdf'); p.type = 'button';
+    p.addEventListener('click', function () { printInvoice(i); }); foot.appendChild(p); box.appendChild(foot);
+    return box;
+  }
+  function requestDetail(r) {
+    var box = el('div', 'breakdown');
+    box.appendChild(steps([['sent', r.submitted], r.approvedAt ? ['approved', r.approvedAt] : null, r.rejectedAt ? ['rejected', r.rejectedAt, true] : null, r.paidAt ? ['paid', r.paidAt] : null]));
+    if (r.note) box.appendChild(el('p', 'breakdown-note', 'arya: ' + r.note));
+    var tbl = el('table', 'tbl mini'), tb = el('tbody');
+    r.lines.forEach(function (l) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, fmtDate(l.date)));
+      var w = el('td', 'work', l.merchant); if (l.note) w.appendChild(el('span', 'sub', l.note)); tr.appendChild(w);
+      var cc = el('td', 'hide-sm'); cc.appendChild(el('span', 'catpill', l.category)); tr.appendChild(cc);
+      tr.appendChild(el('td', 'num', money(l.amount)));
+      var act = el('td', 'act');
+      if (l.hasReceipt) act.appendChild(receiptButton({ id: l.expenseId })); else act.appendChild(el('span', 'muted hide-sm', 'no receipt'));
+      tr.appendChild(act); tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    var byCat = {};
+    r.lines.forEach(function (l) { byCat[l.category] = (byCat[l.category] || 0) + l.amount; });
+    var tf = el('tfoot'), fr = el('tr');
+    fr.appendChild(el('td', null, 'total')); var mc = el('td', 'muted-cell'); mc.appendChild(el('span', 'hide-sm', Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; }).map(function (c) { return c + ' ' + money0(byCat[c]); }).join(' · '))); fr.appendChild(mc);
+    fr.appendChild(el('td', 'hide-sm')); fr.appendChild(el('td', 'num', money(r.total))); fr.appendChild(el('td'));
+    tf.appendChild(fr); tbl.appendChild(tf); box.appendChild(tbl);
+    if (r.status === 'rejected') box.appendChild(el('p', 'breakdown-note', 'these expenses are back in unsent expenses. fix them up and send again.'));
+    return box;
+  }
 
   // receipt viewer
   var lastUrl = null;
@@ -867,7 +941,7 @@
     var head = el('div', 'pi-head'), left = el('div');
     left.appendChild(el('div', 'pi-title', 'invoice #' + inv.number)); left.appendChild(el('div', null, inv.name));
     var right = el('div', 'pi-meta');
-    right.appendChild(el('div', null, 'period: ' + monthLabel(inv.month)));
+    right.appendChild(el('div', null, 'period: ' + periodLabel(inv)));
     right.appendChild(el('div', null, 'submitted: ' + fmtStamp(inv.submitted)));
     if (inv.paidAt) right.appendChild(el('div', null, 'paid: ' + fmtStamp(inv.paidAt)));
     head.appendChild(left); head.appendChild(right); box.appendChild(head);

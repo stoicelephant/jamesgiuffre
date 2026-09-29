@@ -385,3 +385,26 @@ body:not(.is-admin) .admin-only{display:none !important}
   .print-invoice .num{text-align:right}
   .print-invoice .pi-total{display:flex;justify-content:flex-end;gap:24px;margin-top:16px;font-size:14px;font-weight:700}
 }
+
+/* tap a row for its breakdown */
+.tbl tr.click{cursor:pointer}
+.tbl tr.click:hover td,.tbl tr.click.open td{background:var(--hover)}
+.tbl tr.click:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tbl tr.click td:first-child{padding-left:10px}
+.tbl tr.click.open td{border-bottom-color:transparent}
+.chev{display:inline-block;color:var(--faint);font-size:18px;line-height:1;transition:transform .15s}
+.tbl tr.open .chev{transform:rotate(90deg);color:var(--blue)}
+.tbl tr.detail>td{white-space:normal;padding:0 0 18px 10px;background:var(--hover);border-bottom:1px solid var(--line-strong)}
+.breakdown{box-shadow:inset 2px 0 0 var(--blue);padding:4px 10px 0 16px}
+.timeline{list-style:none;display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 12px;padding:0;font-size:12px;color:var(--muted)}
+.timeline li{display:flex;gap:6px;align-items:baseline}
+.timeline li b{font-weight:500;color:var(--text);text-transform:lowercase}
+.timeline li+li::before{content:"→";color:var(--faint);margin-right:16px}
+.timeline li.bad b{color:var(--muted);text-decoration:line-through}
+.breakdown-note{font-size:13px;color:var(--muted);margin:0 0 10px}
+.tbl.mini{font-size:13px}
+.tbl.mini td{padding:8px 12px 8px 0;border-bottom-color:var(--line)}
+.tbl.mini tfoot td{padding-top:9px}
+.tbl.mini .muted-cell{font-weight:400;color:var(--muted);font-size:12px}
+.breakdown-foot{display:flex;justify-content:flex-end;margin-top:12px}
+@media print{.chev{display:none}}

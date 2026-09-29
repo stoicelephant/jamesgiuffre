@@ -1,6 +1,6 @@
-// Submit an invoice: bundles one person's not-yet-invoiced entries for a month.
+// Submit an invoice: bundles all of one person's not-yet-invoiced entries (optionally only one month's).
 // GET  /api/invoices?name=..        -> { invoices }  (your own; arya gets everyone's)
-// POST /api/invoices {name, month}  -> { invoice }   (month = "YYYY-MM")
+// POST /api/invoices {name, month?} -> { invoice }   (month = "YYYY-MM" limits it to that month)
 // PATCH /api/invoices {name: 'arya', id, status: 'paid' | 'submitted'} -> { invoice }   (arya marks paid)
 const crypto = require('crypto');
 const db = require('./_redis');
@@ -22,12 +22,12 @@ module.exports = async (req, res) => {
       const name = db.member(b.name);
       const month = String(b.month || '');
       if (!name) return res.status(403).json({ error: 'name is not on the team list' });
-      if (!/^\d{4}-\d{2}$/.test(month)) return res.status(400).json({ error: 'bad month' });
+      if (month && !/^\d{4}-\d{2}$/.test(month)) return res.status(400).json({ error: 'bad month' });
 
       const mine = db.parseHash(await db.cmd(['HGETALL', db.ENTRIES]))
-        .filter((e) => e.name === name && e.date.slice(0, 7) === month && !e.invoiceId)
+        .filter((e) => e.name === name && (!month || e.date.slice(0, 7) === month) && !e.invoiceId)
         .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.created < b.created ? -1 : 1));
-      if (!mine.length) return res.status(400).json({ error: 'nothing new to submit for this month' });
+      if (!mine.length) return res.status(400).json({ error: 'nothing new to invoice' });
 
       const seq = await db.cmd(['INCR', db.SEQ]);
       const hours = mine.reduce((s, e) => s + e.hours, 0);
@@ -35,7 +35,9 @@ module.exports = async (req, res) => {
       const invoice = {
         id: crypto.randomUUID(),
         number: String(seq).padStart(4, '0'),
-        name, month, hours, amount,
+        name, hours, amount,
+        month: mine[mine.length - 1].date.slice(0, 7),
+        from: mine[0].date, to: mine[mine.length - 1].date,
         status: 'submitted',
         submitted: new Date().toISOString(),
         lines: mine.map((e) => ({ entryId: e.id, date: e.date, matter: e.matter, hours: e.hours, start: e.start || '', rate: e.rate, amount: Math.round(e.hours * e.rate * 100) / 100 }))

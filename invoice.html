@@ -104,11 +104,6 @@
     <section class="view" data-view="time">
       <div class="page-head">
         <div><button type="button" class="back-link" data-go="overview">← overview</button><h2>time</h2></div>
-        <div class="month-switch small">
-          <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
-          <span class="month-label"></span>
-          <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
-        </div>
       </div>
 
       <form class="card" id="entry-form" novalidate>
@@ -150,14 +145,14 @@
       </form>
 
       <div class="card">
-        <div class="card-head"><h3>entries</h3><span class="muted month-label"></span></div>
+        <div class="card-head"><h3>unbilled time</h3><span class="muted">clears once it's invoiced</span></div>
         <div class="table-wrap">
           <table class="tbl">
             <thead><tr><th>date</th><th>work</th><th class="num">time</th><th class="num hide-sm">rate</th><th class="num">amount</th><th class="act"></th></tr></thead>
             <tbody id="entry-rows"></tbody>
             <tfoot><tr><td>total</td><td></td><td class="num" id="t-hours"></td><td class="hide-sm"></td><td class="num" id="t-amount"></td><td></td></tr></tfoot>
           </table>
-          <p class="empty" id="entry-empty">nothing logged this month yet.</p>
+          <p class="empty" id="entry-empty">nothing unbilled. new time you log shows up here.</p>
         </div>
         <div class="submit-bar" id="invoice-bar">
           <p id="invoice-sum"></p>
@@ -166,10 +161,10 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h3>invoices</h3></div>
+        <div class="card-head"><h3>invoices</h3><span class="muted">tap one for the breakdown</span></div>
         <div class="table-wrap">
           <table class="tbl">
-            <thead><tr><th>no.</th><th>period</th><th class="num">time</th><th class="num">amount</th><th>status</th><th class="act"></th></tr></thead>
+            <thead><tr><th>no.</th><th>period</th><th class="num hide-sm">time</th><th class="num">amount</th><th>status</th><th class="act"></th></tr></thead>
             <tbody id="invoice-rows"></tbody>
           </table>
           <p class="empty" id="invoice-empty">no invoices yet.</p>
@@ -181,11 +176,6 @@
     <section class="view" data-view="expenses">
       <div class="page-head">
         <div><button type="button" class="back-link" data-go="overview">← overview</button><h2>expenses</h2></div>
-        <div class="month-switch small">
-          <button type="button" class="mbtn" data-step="-1" aria-label="previous month">‹</button>
-          <span class="month-label"></span>
-          <button type="button" class="mbtn" data-step="1" aria-label="next month">›</button>
-        </div>
       </div>
 
       <form class="card" id="expense-form" novalidate>
@@ -227,13 +217,13 @@
       </form>
 
       <div class="card">
-        <div class="card-head"><h3>this month</h3><span class="muted month-label"></span></div>
+        <div class="card-head"><h3>unsent expenses</h3><span class="muted">clears once it's sent to arya</span></div>
         <div class="table-wrap">
           <table class="tbl">
             <thead><tr><th class="chk"><input type="checkbox" id="check-all" aria-label="select all"></th><th>date</th><th>where</th><th class="hide-sm">category</th><th class="num">amount</th><th class="hide-sm">status</th><th class="act"></th></tr></thead>
             <tbody id="expense-rows"></tbody>
           </table>
-          <p class="empty" id="expense-empty">no expenses this month.</p>
+          <p class="empty" id="expense-empty">nothing waiting to be sent.</p>
         </div>
         <div class="submit-bar" id="reimb-bar">
           <p id="reimb-sum"></p>
@@ -242,10 +232,10 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h3>reimbursement requests</h3></div>
+        <div class="card-head"><h3>reimbursement requests</h3><span class="muted">tap one for the breakdown</span></div>
         <div class="table-wrap">
           <table class="tbl">
-            <thead><tr><th>no.</th><th>sent</th><th class="num">items</th><th class="num">total</th><th>status</th></tr></thead>
+            <thead><tr><th>no.</th><th>sent</th><th class="num hide-sm">items</th><th class="num">total</th><th>status</th><th class="act"></th></tr></thead>
             <tbody id="request-rows"></tbody>
           </table>
           <p class="empty" id="request-empty">no requests yet.</p>
