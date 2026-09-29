@@ -78,3 +78,35 @@ figcaption{font-size:12px;color:var(--muted);margin-top:6px}
   .grid.four{grid-template-columns:repeat(2,1fr)}
   footer{flex-wrap:wrap}
 }
+
+/* ---- lights off (lights page) ---- */
+body.lights-off{transition:background-color 1.2s ease,color 1.2s ease}
+body.lights-off.dark{--bg:#08080a;--fg:#e8e6ee;--muted:#8b8894;--line:#24232a;--accent:#e0855f;background:#08080a;color:#e8e6ee}
+body.lights-off .back,body.lights-off footer,body.lights-off footer a,body.lights-off .dd summary,body.lights-off .project h2,body.lights-off figcaption{transition:color 1.2s ease}
+body.lights-off .vid{transition:box-shadow 1.6s ease .3s}
+body.lights-off.dark .vid{box-shadow:0 0 42px -6px rgba(170,120,255,.35),0 0 90px -20px rgba(255,80,170,.25)}
+body.lights-off.dark .ph{background:#141318}
+body.lights-off.dark .menu{background:#131217}
+body.lights-off.dark .menu a:hover{background:#1f1e25}
+.ph{cursor:zoom-in}
+.ph img{transition:transform .4s ease,filter .4s ease}
+.ph:hover img{transform:scale(1.03)}
+body.lights-off.dark .ph img{filter:brightness(.92)}
+body.lights-off.dark .ph:hover img{filter:brightness(1.05)}
+.popout-block{position:absolute;top:0;right:0;width:64px;height:64px;z-index:2}
+
+.lightbox{position:fixed;inset:0;z-index:50;background:rgba(5,5,7,.94);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s ease}
+.lightbox.open{opacity:1}
+.lightbox[hidden]{display:none}
+.lightbox figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:calc(100vw - 140px)}
+.lightbox img{max-width:100%;max-height:calc(100svh - 110px);border-radius:6px;display:block;box-shadow:0 0 80px -20px rgba(170,120,255,.35)}
+.lightbox figcaption{color:#8b8894;font-size:13px}
+.lightbox button{position:absolute;background:none;border:0;color:#bdbac6;font:300 40px/1 Inter,sans-serif;cursor:pointer;padding:12px 16px;transition:color .2s}
+.lightbox button:hover{color:#fff}
+.lb-close{top:16px;right:18px;font-size:34px}
+.lb-prev{left:12px;top:50%;transform:translateY(-50%)}
+.lb-next{right:12px;top:50%;transform:translateY(-50%)}
+@media (max-width:760px){
+  .lightbox figure{max-width:100vw}
+  .lb-prev,.lb-next{top:auto;bottom:18px;transform:none}
+}
