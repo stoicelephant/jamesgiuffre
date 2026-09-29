@@ -2,7 +2,7 @@
 // Data lives behind /api/* (Upstash Redis). Everyone sees their own; arya sees everyone and approves.
 (function () {
   'use strict';
-  var TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];   // keep in sync with api/_redis.js
+  var TEAM = ['demo', 'arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];   // keep in sync with api/_redis.js
   var ADMIN = 'arya';
   var CATEGORIES = ['food', 'transport', 'lodging', 'software', 'equipment', 'events', 'other'];
 

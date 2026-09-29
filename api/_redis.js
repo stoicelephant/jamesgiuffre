@@ -22,7 +22,7 @@ async function call(path, body) {
 }
 
 // The only names allowed on /invoice (keep in sync with TEAM in app.js).
-const TEAM = ['arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
+const TEAM = ['demo', 'arya', 'james', 'hammad', 'milo', 'ballah', 'golam'];
 // arya can see everyone's hours, pay, and invoices; everyone else only sees their own.
 const ADMIN = 'arya';
 // entries saved before the switch to first names ("Arya Toufanian", "Hammaad Sattar"...) map to the new names
