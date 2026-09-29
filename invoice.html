@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>invoice · james giuffre</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="invoice.css">
+</head>
+<body>
+<div class="page">
+  <main class="inv">
+    <a class="back" href="/">← back</a>
+
+    <!-- sign in: just a name -->
+    <section id="login" class="login" hidden>
+      <h1>invoice</h1>
+      <p>who's logging hours?</p>
+      <form id="login-form" class="row" autocomplete="on">
+        <input id="login-name" name="name" type="text" placeholder="your name" maxlength="60" required autocomplete="name">
+        <button class="btn" type="submit">continue →</button>
+      </form>
+    </section>
+
+    <!-- logged in -->
+    <section id="app" hidden>
+      <div class="head">
+        <h1>invoice</h1>
+        <p class="who">logged in as <strong id="who"></strong> · <button class="link" id="switch" type="button">switch</button></p>
+      </div>
+
+      <div class="block">
+        <h2>your rate</h2>
+        <label class="rate">
+          <span>$</span>
+          <input id="rate" type="number" min="0" max="10000" step="5" inputmode="decimal" placeholder="0">
+          <span class="muted">/ hour</span>
+        </label>
+      </div>
+
+      <form id="entry-form" class="block">
+        <h2>new entry</h2>
+        <div class="fields">
+          <label class="f date">
+            <span>date</span>
+            <input id="date" type="date" required>
+          </label>
+          <label class="f matter">
+            <span>subject matter</span>
+            <textarea id="matter" rows="2" maxlength="500" placeholder="e.g. drafted investor update, call with acme re: pilot" required></textarea>
+          </label>
+          <div class="f time">
+            <span>time</span>
+            <div class="stepper">
+              <button type="button" class="step" data-d="-0.25" aria-label="15 minutes less">−</button>
+              <output id="hours">0:15</output>
+              <button type="button" class="step" data-d="0.25" aria-label="15 minutes more">+</button>
+            </div>
+            <div class="chips">
+              <button type="button" class="chip" data-h="0.25">15m</button>
+              <button type="button" class="chip" data-h="0.5">30m</button>
+              <button type="button" class="chip" data-h="1">1h</button>
+              <button type="button" class="chip" data-h="2">2h</button>
+              <button type="button" class="chip" data-h="4">4h</button>
+            </div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <span class="preview" id="preview"></span>
+          <button class="btn" type="submit" id="add">add entry</button>
+        </div>
+        <p class="msg" id="msg" role="status"></p>
+      </form>
+
+      <div class="block">
+        <div class="list-head">
+          <h2>entries</h2>
+          <div class="filters">
+            <div class="seg" role="group" aria-label="whose entries">
+              <button type="button" class="on" data-scope="mine">mine</button>
+              <button type="button" data-scope="all">everyone</button>
+            </div>
+            <input id="month" type="month" aria-label="month">
+          </div>
+        </div>
+
+        <!-- invoice header, shown when printing -->
+        <div class="print-only print-head">
+          <div><strong>invoice</strong></div>
+          <div id="print-meta"></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th class="c-date">date</th><th class="c-who">who</th><th>subject matter</th><th class="num">time</th><th class="num c-rate">rate</th><th class="num">amount</th><th class="c-x"></th></tr>
+            </thead>
+            <tbody id="rows"></tbody>
+            <tfoot>
+              <tr><td class="c-date">total</td><td class="c-who"></td><td></td><td class="num" id="t-hours">0:00</td><td class="num c-rate"></td><td class="num" id="t-amount">$0.00</td><td class="c-x"></td></tr>
+            </tfoot>
+          </table>
+          <p class="empty" id="empty">no entries for this month yet.</p>
+        </div>
+
+        <div class="actions">
+          <button class="link" id="csv" type="button">export csv</button>
+          <button class="link" id="print" type="button">print invoice</button>
+          <span class="sync" id="sync"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="https://x.com/jamesgiuffree" target="_blank" rel="noopener">x</a>
+      <a href="https://www.linkedin.com/in/jamesgiuffre" target="_blank" rel="noopener">linkedin</a>
+    </nav>
+    <span>©<span class="yr">2026</span> made by james</span>
+  </footer>
+</div>
+<script src="site.js"></script>
+<script src="invoice.js"></script>
+</body>
+</html>
