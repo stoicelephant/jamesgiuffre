@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree · james giuffre</title>
+<meta name="description" content="every page on jamesgiuffre.com, as a tree.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="tree.css">
+</head>
+<body>
+<div class="page">
+  <main class="treepage">
+    <a class="home-btn" href="/">← back home</a>
+
+    <p class="prompt" aria-hidden="true"><span class="dollar">$</span> <span id="typed"></span><span class="caret"></span></p>
+    <h1>the site, as a tree.</h1>
+    <p class="sub">every page on jamesgiuffre.com and what grows off it. hover a branch to trace it back to the root, click to go there.</p>
+
+    <div class="stage" id="stage">
+      <svg id="wires" aria-hidden="true"></svg>
+      <nav id="nodes" aria-label="site map"></nav>
+    </div>
+
+    <p class="count" id="count"></p>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="/">home</a>
+      <a href="/lights">lights</a>
+    </nav>
+    <span>©<span class="yr">2026</span> made by james</span>
+  </footer>
+</div>
+<script src="site.js"></script>
+<script src="tree.js"></script>
+</body>
+</html>

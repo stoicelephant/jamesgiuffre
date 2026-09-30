@@ -1,0 +1,57 @@
+/* /tree: the site map, same white / Inter / rust accent as the homepage */
+.treepage{max-width:1100px;width:100%;flex:1}
+
+.home-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;transition:border-color .2s,color .2s,background .2s}
+.home-btn:hover{border-color:var(--accent);color:var(--accent);background:#fdf7f5}
+
+.prompt{font:400 13px/1.4 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin:32px 0 10px;min-height:18px}
+.prompt .dollar{color:var(--accent)}
+.caret{display:inline-block;width:7px;height:14px;margin-left:2px;vertical-align:-2px;background:var(--accent);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.treepage h1{font-size:16px;font-weight:500;margin-bottom:6px}
+.sub{color:var(--muted);max-width:520px;margin-bottom:28px}
+
+/* the tree */
+.stage{position:relative;width:100%}
+#wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.wire{fill:none;stroke:#dedede;stroke-width:1.25;stroke-linecap:round;transition:stroke .25s,stroke-width .25s,opacity .25s}
+.wire.lit{stroke:var(--accent);stroke-width:1.75}
+.dim .wire:not(.lit){opacity:.35}
+.spark{fill:var(--accent);opacity:0;filter:drop-shadow(0 0 3px rgba(180,71,44,.7))}
+
+#nodes{position:absolute;inset:0}
+.node{position:absolute;left:0;top:0;display:flex;align-items:center;gap:8px;white-space:nowrap;text-decoration:none;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 12px;box-shadow:0 1px 0 rgba(0,0,0,.02);opacity:0;transition:opacity .5s ease,border-color .2s,box-shadow .2s,color .2s}
+.node.in{opacity:1}
+.node:hover,.node.lit{border-color:var(--accent);box-shadow:0 4px 18px rgba(180,71,44,.10)}
+.dim .node:not(.lit){opacity:.45}
+.node .nm{font-size:15px;font-weight:500}
+.node .pt{font:400 12px/1 "JetBrains Mono",ui-monospace,Menlo,monospace;color:#999}
+.node .tag{font-size:11px;color:var(--muted);background:#f5f5f5;border-radius:999px;padding:2px 7px}
+.node .tag.here{color:#fff;background:var(--accent)}
+.node .tx{display:flex;flex-direction:column;gap:3px}
+.node .note{font-size:12px;color:var(--muted)}
+
+/* root: jamesgiuffre.com */
+.node.root{background:var(--fg);border-color:var(--fg);color:#fff;border-radius:12px;padding:10px 14px}
+.node.root .nm{font-size:15px}
+.node.root .pt{color:#bbb}
+.node.root:hover,.node.root.lit{border-color:var(--accent);background:#222}
+.node.root .led{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:glow 2.4s ease-in-out infinite}
+@keyframes glow{50%{opacity:.35;box-shadow:0 0 2px var(--accent)}}
+
+/* leaves: sections inside a page */
+.node.leaf{padding:4px 10px;border-radius:8px;background:#fafafa}
+.node.leaf .nm{font-size:13px;font-weight:400;color:#444}
+.node.leaf .pt{font-size:11px}
+
+.count{font:400 12px/1.4 "JetBrains Mono",ui-monospace,Menlo,monospace;color:#aaa;margin-top:28px}
+
+@media (max-width:760px){
+  .prompt{margin-top:32px}
+  .sub{margin-bottom:24px}
+  .node .note{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .caret,.node.root .led{animation:none}
+  .spark{display:none}
+}

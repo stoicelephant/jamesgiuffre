@@ -25,6 +25,15 @@
           "value": "noindex, nofollow"
         }
       ]
+    },
+    {
+      "source": "/tree",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }
