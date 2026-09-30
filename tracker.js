@@ -1,38 +1,72 @@
 // /tracker: add tasks, drag them between not started / in progress / complete.
-// Saves to /api/tasks (shared across devices); falls back to this browser if storage isn't reachable.
+// Saves to /api/tasks (shared across devices). Locked behind a password the server checks;
+// once entered, it's remembered on this device until you hit "lock".
 (function () {
-  var LOCAL = 'tracker.tasks';
+  var PASS = 'tracker.pass';
   var tasks = [];
-  var online = true;
+  var pass = '';
   var $ = function (id) { return document.getElementById(id); };
   var cols = Array.prototype.slice.call(document.querySelectorAll('.col'));
   var statusEl = $('save-status');
+  var lockMsg = $('lock-msg');
 
-  var local = {
-    get: function () { try { return JSON.parse(localStorage.getItem(LOCAL) || '[]'); } catch (e) { return []; } },
-    set: function (v) { try { localStorage.setItem(LOCAL, JSON.stringify(v)); } catch (e) {} }
+  var remember = {
+    get: function () { try { return localStorage.getItem(PASS) || ''; } catch (e) { return ''; } },
+    set: function (v) { try { v ? localStorage.setItem(PASS, v) : localStorage.removeItem(PASS); } catch (e) {} }
   };
   function id() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2); }
   function say(t) { statusEl.textContent = t || ''; }
-
-  // ---------- load / save ----------
-  function load() {
-    fetch('/api/tasks', { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (d) { tasks = d.tasks || []; online = true; local.set(tasks); render(); })
-      .catch(function () { online = false; tasks = local.get(); render(); say('saving in this browser only'); });
+  function api(method, body) {
+    var opt = { method: method, cache: 'no-store', headers: { 'x-tracker-pass': pass } };
+    if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch('/api/tasks', opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) { var e = new Error(d.error || 'error'); e.status = r.status; throw e; } return d; });
+    });
   }
 
+  // ---------- lock ----------
+  function lock(msg, isErr) {
+    tasks = []; pass = '';
+    $('app').hidden = true;
+    $('lock').hidden = false;
+    lockMsg.textContent = msg || '';
+    lockMsg.classList.toggle('err', !!isErr);
+    $('lock-pass').value = '';
+    setTimeout(function () { $('lock-pass').focus(); }, 30);
+  }
+  function unlock(p) {
+    pass = p;
+    lockMsg.textContent = 'checking…'; lockMsg.classList.remove('err');
+    api('GET').then(function (d) {
+      remember.set(pass);
+      tasks = d.tasks || [];
+      $('lock').hidden = true;
+      $('app').hidden = false;
+      render();
+    }).catch(function (e) {
+      remember.set('');
+      lock(e.status === 401 || e.status === 429 || e.status === 503 ? e.message : 'couldn\u2019t reach the server, try again', true);
+    });
+  }
+  $('lock').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p = $('lock-pass').value.trim();
+    if (p) unlock(p);
+  });
+  $('relock').addEventListener('click', function () { remember.set(''); lock(); });
+
+  // ---------- save ----------
   var timer = null;
   function save() {
-    local.set(tasks);
-    if (!online) return;
     clearTimeout(timer);
     say('saving…');
     timer = setTimeout(function () {
-      fetch('/api/tasks', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tasks: tasks }) })
-        .then(function (r) { if (!r.ok) throw 0; say('saved'); setTimeout(function () { if (statusEl.textContent === 'saved') say(''); }, 1500); })
-        .catch(function () { say('couldn’t save, will retry on your next change'); });
+      api('PUT', { tasks: tasks })
+        .then(function () { say('saved'); setTimeout(function () { if (statusEl.textContent === 'saved') say(''); }, 1500); })
+        .catch(function (e) {
+          if (e.status === 401) { remember.set(''); return lock('password changed, enter it again', true); }
+          say('couldn\u2019t save, will retry on your next change');
+        });
     }, 350);
   }
 
@@ -169,5 +203,6 @@
   window.addEventListener('pointerup', finish);
   window.addEventListener('pointercancel', finish);
 
-  load();
+  var saved = remember.get();
+  if (saved) unlock(saved); else lock();
 })();

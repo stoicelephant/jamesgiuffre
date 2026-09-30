@@ -18,6 +18,16 @@
     <a class="back" href="/">← home</a>
     <h1>tracker</h1>
 
+    <form id="lock" class="lock" autocomplete="off" hidden>
+      <p>enter the password to see the board.</p>
+      <div class="add">
+        <input id="lock-pass" type="password" inputmode="numeric" placeholder="password" maxlength="40" aria-label="password">
+        <button type="submit">unlock</button>
+      </div>
+      <p class="status" id="lock-msg" role="status"></p>
+    </form>
+
+    <div id="app" hidden>
     <form id="add" class="add" autocomplete="off">
       <input id="add-title" type="text" placeholder="add a task…" maxlength="300" aria-label="new task">
       <button type="submit">add</button>
@@ -40,7 +50,8 @@
       </section>
     </div>
 
-    <p class="status" id="save-status" role="status"></p>
+    <p class="status"><span id="save-status" role="status"></span> <button type="button" id="relock" class="relock">lock</button></p>
+    </div>
   </main>
 
   <footer>
