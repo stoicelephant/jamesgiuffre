@@ -45,7 +45,8 @@
   }
 
   // ---------- state ----------
-  var me = member(store.get('inv.name')) || '';
+  var pass = store.get('inv.pass') || '';   // shared team password, remembered on this device
+  var me = pass ? member(store.get('inv.name')) || '' : '';
   var isAdmin = false;
   var ym = ymOf(today());
   var view = 'overview';
@@ -55,10 +56,14 @@
 
   // ---------- api ----------
   function api(method, path, body) {
-    var opt = { method: method, headers: {}, cache: 'no-store' };
+    var opt = { method: method, headers: { 'x-team-pass': pass }, cache: 'no-store' };
     if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
     return fetch(path, opt).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'something went wrong, try again'); return d; });
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (r.status === 401 && me) locked(d.error === 'wrong password' ? 'the team password changed. enter it again.' : 'enter the team password.');
+        if (!r.ok) { var er = new Error(d.error || 'something went wrong, try again'); er.status = r.status; throw er; }
+        return d;
+      });
     });
   }
   function load() {
@@ -93,7 +98,7 @@
   function closeList() { nameList.hidden = true; nameIn.setAttribute('aria-expanded', 'false'); }
   function highlight() { $$('li', nameList).forEach(function (li, i) { li.classList.toggle('on', i === active); }); }
   function pick(n) { nameIn.value = n; closeList(); validName(); }
-  function validName() { var ok = !!member(nameIn.value); go.disabled = !ok; $('login-msg').textContent = ''; return ok; }
+  function validName() { var ok = !!member(nameIn.value) && (!!pass || !!passIn.value.trim()); go.disabled = !ok; return !!member(nameIn.value); }
   nameIn.addEventListener('input', function () { openList(); validName(); });
   nameIn.addEventListener('focus', openList);
   nameIn.addEventListener('blur', function () { setTimeout(closeList, 120); });
@@ -103,18 +108,41 @@
     else if (e.key === 'Enter' && !nameList.hidden && active > -1 && shown[active]) { e.preventDefault(); pick(shown[active]); }
     else if (e.key === 'Escape') closeList();
   });
+  var passIn = $('login-pass');
+  function msg(t, bad) { var m = $('login-msg'); m.textContent = t || ''; m.classList.toggle('err', !!bad); }
+  function showPass() { var need = !pass; $('pass-field').hidden = !need; return need; }
+  passIn.addEventListener('input', function () { validName(); msg(''); });
   $('login-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var n = member(nameIn.value);
-    if (!n) { $('login-msg').textContent = 'pick your name from the list.'; $('login-msg').classList.add('err'); openList(); return; }
-    me = n; store.set('inv.name', me); start();
+    if (!n) { msg('pick your name from the list.', true); openList(); return; }
+    if (pass) { me = n; store.set('inv.name', me); start(); return; }
+    var p = passIn.value.trim();
+    if (!p) { msg('enter the team password.', true); passIn.focus(); return; }
+    go.disabled = true; msg('checking…');
+    pass = p;
+    fetch('/api/entries?name=' + encodeURIComponent(n), { headers: { 'x-team-pass': p }, cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (!x.ok) { pass = ''; msg(x.d.error || 'something went wrong, try again', true); passIn.select(); return; }
+        store.set('inv.pass', p); passIn.value = ''; msg('');
+        me = n; store.set('inv.name', me); start();
+      })
+      .catch(function () { pass = ''; msg('couldn\u2019t reach the server, try again', true); })
+      .then(function () { validName(); });
   });
+  function locked(t) {
+    pass = ''; store.del('inv.pass'); me = ''; start(); msg(t, true);
+    nameIn.value = store.get('inv.name') || ''; validName();
+    setTimeout(function () { passIn.focus(); }, 60);
+  }
   $('switch').addEventListener('click', function () { me = ''; store.del('inv.name'); nameIn.value = ''; go.disabled = true; start(); });
+  $('lock').addEventListener('click', function () { store.del('inv.name'); nameIn.value = ''; locked(''); $('login-msg').classList.remove('err'); });
 
   function start() {
     $('signin').hidden = !!me;
     $('shell').hidden = !me;
-    if (!me) { document.body.classList.remove('is-admin'); setTimeout(function () { nameIn.focus(); }, 50); return; }
+    if (!me) { document.body.classList.remove('is-admin'); showPass(); setTimeout(function () { nameIn.focus(); }, 50); return; }
     isAdmin = me === ADMIN;
     document.body.classList.toggle('is-admin', isAdmin);
     $('me-name').textContent = me;
@@ -774,7 +802,7 @@
   // receipt viewer
   var lastUrl = null;
   function openReceipt(x) {
-    fetch('/api/receipt?id=' + encodeURIComponent(x.id) + '&name=' + encodeURIComponent(me), { cache: 'no-store' })
+    fetch('/api/receipt?id=' + encodeURIComponent(x.id) + '&name=' + encodeURIComponent(me), { cache: 'no-store', headers: { 'x-team-pass': pass } })
       .then(function (r) { if (!r.ok) throw new Error('could not load that receipt'); return r.blob(); })
       .then(function (blob) {
         if (lastUrl) URL.revokeObjectURL(lastUrl);

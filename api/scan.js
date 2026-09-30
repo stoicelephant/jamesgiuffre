@@ -34,6 +34,8 @@ function clean(f) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'method not allowed' }); }
+  if (!db.ready()) return res.status(503).json({ error: 'storage not connected' });
+  try { if (!(await db.gate(req, res))) return; } catch (e) { return res.status(500).json({ error: 'could not reach storage, try again' }); }
   const b = db.body(req);
   if (!db.member(b.name)) return res.status(403).json({ error: 'name is not on the team list' });
   if (!KEY) return res.status(501).json({ error: 'receipt reading is not connected' });

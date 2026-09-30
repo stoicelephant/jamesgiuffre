@@ -11,6 +11,7 @@ const REQUEST_STATUS = { approve: 'approved', reject: 'rejected', paid: 'paid' }
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!db.ready()) return res.status(503).json({ error: 'storage not connected' });
+  try { if (!(await db.gate(req, res))) return; } catch (e) { return res.status(500).json({ error: 'could not reach storage, try again' }); }
 
   try {
     if (req.method === 'POST') {

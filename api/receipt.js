@@ -4,6 +4,7 @@ const db = require('./_redis');
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   if (!db.ready()) return res.status(503).json({ error: 'storage not connected' });
+  try { if (!(await db.gate(req, res))) return; } catch (e) { return res.status(500).json({ error: 'could not reach storage, try again' }); }
   try {
     const who = db.member(req.query && req.query.name);
     if (!who) return res.status(403).json({ error: 'name is not on the team list' });

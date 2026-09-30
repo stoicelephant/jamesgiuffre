@@ -35,8 +35,27 @@ const canon = (n) => {
 };
 const member = (n) => TEAM.find((t) => t.toLowerCase() === String(n || '').replace(/\s+/g, ' ').trim().toLowerCase()) || null;
 
+// Shared team password for /invoice. It lives in Vercel (INVOICE_PASSWORD), never in this public repo.
+// Until INVOICE_PASSWORD is added, the tracker's TRACKER_PASSWORD is used so nothing breaks.
+// Clients send it as the header  x-team-pass. Wrong guesses are capped per IP per hour.
+const crypto = require('crypto');
+const sha = (v) => crypto.createHash('sha256').update(String(v)).digest();
+const ipOf = (req) => String(req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || 'unknown').split(',')[0].trim();
+async function gate(req, res) {
+  const pass = process.env.INVOICE_PASSWORD || process.env.TRACKER_PASSWORD;
+  if (!pass) { res.status(503).json({ error: 'password not set up yet' }); return false; }
+  const failKey = 'invoice:fails:' + ipOf(req);
+  const fails = Number(await module.exports.cmd(['GET', failKey])) || 0;
+  if (fails >= 10) { res.status(429).json({ error: 'too many wrong tries, wait an hour' }); return false; }
+  const given = String(req.headers['x-team-pass'] || '');
+  if (given && crypto.timingSafeEqual(sha(given), sha(pass))) return true;
+  if (given) await module.exports.multi([['INCR', failKey], ['EXPIRE', failKey, '3600']]);
+  res.status(401).json({ error: given ? 'wrong password' : 'password required' });
+  return false;
+}
+
 module.exports = {
-  TEAM, ADMIN, member, canon,
+  TEAM, ADMIN, member, canon, gate,
   ready: () => !!(URL_ && TOKEN),
   seen,
   cmd: async (c) => (await call('', c)).result,

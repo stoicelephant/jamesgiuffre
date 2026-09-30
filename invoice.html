@@ -31,6 +31,10 @@
                role="combobox" aria-expanded="false" aria-controls="name-list" aria-autocomplete="list">
         <ul id="name-list" class="combo-list" role="listbox" hidden></ul>
       </div>
+      <label class="pass-field" id="pass-field" hidden>
+        <span>team password</span>
+        <input id="login-pass" type="password" inputmode="numeric" autocomplete="current-password" maxlength="40" placeholder="••••">
+      </label>
       <button class="btn primary wide" type="submit" id="login-go" disabled>continue</button>
     </form>
     <p class="hint" id="login-msg" role="status"></p>
@@ -56,6 +60,7 @@
       <span class="avatar" id="me-avatar"></span>
       <span id="me-name"></span>
       <button type="button" class="link" id="switch">switch</button>
+      <button type="button" class="link" id="lock" title="sign out and forget the password on this device">lock</button>
     </div>
   </header>
 

@@ -438,3 +438,11 @@ button.stand:hover .t{color:var(--glow)}
 .stand-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .stand-foot .link{margin-left:auto}
 @media (max-width:640px){.bulk-btns{width:100%}.bulk-btns .btn{flex:1}}
+
+/* team password on sign-in */
+.pass-field{display:block;margin-top:12px}
+.pass-field[hidden]{display:none}
+.pass-field span{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.pass-field input{width:100%;border:1px solid var(--line-strong);border-radius:var(--r);padding:12px 13px;background:var(--field);color:var(--text);outline:none;font-size:16px;letter-spacing:.2em}
+.pass-field input:focus{border-color:var(--blue)}
+.pass-field input::placeholder{color:var(--faint)}
