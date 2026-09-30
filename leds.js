@@ -15,7 +15,8 @@
   var ripples = [];                         // {x, y, t0}
   var last = { x: -1, y: -1, t: 0 };
   var running = true, start = performance.now();
-  var HUES = 48, sprites = [], spriteR = 0;  // pre-drawn glowing leds, one per hue
+  var HUES = 48, sprites = [], spriteR = 0;
+  var shown = [];                           // column heights actually drawn (smoothed)  // pre-drawn glowing leds, one per hue
 
   // one soft, glowing led per hue: bright core, full color at the edge, halo fading out inside its own cell
   function buildSprites(rad) {
@@ -57,7 +58,7 @@
   // column height 0..1, shaped like a spectrum with a kick on every beat
   function level(c, t) {
     var beat = (t % beatLen) / beatLen;
-    var kick = Math.exp(-beat * 3.5);                     // softer, longer beat instead of a sharp hit
+    var kick = Math.pow(0.5 + 0.5 * Math.cos(beat * 6.2832), 3);   // a smooth swell on each beat, no sudden jump
     var x = c / (COLS - 1);
     var base = 0.55 - 0.3 * x;                               // more bass than treble
     var wob = 0.18 * Math.sin(t * 2.1 + c * S * 0.55)
@@ -77,7 +78,11 @@
     var rad = cell * 0.38;
 
     for (var c = 0; c < COLS; c++) {
-      var lv = level(c, t) * ROWS;
+      // ease each column toward its target so nothing ever snaps
+      var target = level(c, t) * ROWS;
+      if (shown[c] == null) shown[c] = target;
+      shown[c] += (target - shown[c]) * 0.12;
+      var lv = shown[c];
       for (var r = 0; r < ROWS; r++) {
         var fromBottom = ROWS - 1 - r;
         var on = fromBottom < lv ? 1 : 0;
