@@ -22,6 +22,8 @@
     '@keyframes toTreeBlink{0%,100%{opacity:1;box-shadow:0 6px 22px rgba(180,71,44,.35),0 0 0 0 rgba(180,71,44,.45)}' +
     '50%{opacity:.45;box-shadow:0 6px 22px rgba(180,71,44,.2),0 0 0 10px rgba(180,71,44,0)}}' +
     '@media (prefers-reduced-motion:reduce){.to-tree.hello{animation:none}}' +
+    // the row takes ~50px, so full-height pages shrink by that much instead of spilling past the screen
+    'body.has-tree-bar .page{min-height:calc(100vh - 50px);min-height:calc(100svh - 50px)}' +
     '@media print{.to-tree-bar{display:none}}';
   document.head.appendChild(css);
 
@@ -37,11 +39,14 @@
   bar.className = 'to-tree-bar';
   bar.appendChild(a);
   document.body.insertBefore(bar, document.body.firstChild);
+  document.body.classList.add('has-tree-bar');
 
   // the browser can keep the old scroll position (or anchor to content) and hide the new row above the fold,
   // so start at the very top while the page settles
   var top = function () { if (window.scrollY > 0 && window.scrollY <= bar.offsetHeight + 4) window.scrollTo(0, 0); };
   top();
-  [60, 250, 700].forEach(function (ms) { setTimeout(top, ms); });
+  [60, 250, 700, 1200].forEach(function (ms) { setTimeout(top, ms); });
   window.addEventListener('load', top);
+  var t0 = Date.now(), onScroll = function () { if (Date.now() - t0 < 2000) top(); else window.removeEventListener('scroll', onScroll); };
+  window.addEventListener('scroll', onScroll, { passive: true });
 })();
