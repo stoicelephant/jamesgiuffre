@@ -155,11 +155,6 @@
     n.el.addEventListener('blur', clear);
   });
 
-  // ---- `$ tree jamesgiuffre.com` ----
-  var cmd = 'tree jamesgiuffre.com', typed = document.getElementById('typed');
-  if (still) typed.textContent = cmd;
-  else (function type(i) { typed.textContent = cmd.slice(0, i); if (i < cmd.length) setTimeout(function () { type(i + 1); }, 45 + Math.random() * 40); })(0);
-
   document.getElementById('count').textContent = all.length + ' pages';
 
   // ---- go ----
