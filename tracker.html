@@ -54,6 +54,20 @@
     </div>
   </main>
 
+  <div id="took" class="modal" hidden>
+    <form class="sheet" id="took-form" autocomplete="off">
+      <p class="q">nice. how long did <span id="took-title"></span> take?</p>
+      <div class="dur">
+        <label><input id="took-h" type="number" min="0" max="999" inputmode="numeric" placeholder="0"> hr</label>
+        <label><input id="took-m" type="number" min="0" max="59" step="5" inputmode="numeric" placeholder="0"> min</label>
+      </div>
+      <div class="acts">
+        <button type="button" class="ghost-btn" id="took-skip">skip</button>
+        <button type="submit" class="solid-btn">save</button>
+      </div>
+    </form>
+  </div>
+
   <footer>
     <nav>
       <a href="/">home</a>
