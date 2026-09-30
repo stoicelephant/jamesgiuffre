@@ -1,0 +1,42 @@
+/* /tracker: same white, Inter, rust-accent look as the homepage */
+.tracker{max-width:1000px;width:100%;flex:1}
+.tracker h1{font-size:16px;font-weight:500;margin:48px 0 16px}
+
+.add{display:flex;gap:8px;max-width:480px}
+.add input{flex:1;min-width:0;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;outline:none;transition:border-color .2s}
+.add input:focus{border-color:#cfcfcf}
+.add input::placeholder{color:#aaa}
+.add button{font:500 14px/1 Inter,sans-serif;color:#fff;background:var(--accent);border:0;border-radius:8px;padding:0 16px;cursor:pointer}
+.add button:hover{opacity:.9}
+
+.progress{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);margin:14px 0 32px;max-width:480px}
+.progress .bar{flex:1;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
+#progress-fill{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+.col h2{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:10px;display:flex;gap:6px}
+.col h2 .n{color:#aaa;font-weight:400}
+.list{list-style:none;min-height:120px;padding:6px;border-radius:10px;background:#fafafa;border:1px dashed transparent;transition:border-color .15s,background .15s}
+.col.over .list{border-color:var(--accent);background:#fdf7f5}
+.empty{font-size:13px;color:#bbb;padding:10px;text-align:center;pointer-events:none}
+
+.card{display:flex;align-items:flex-start;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px 9px 12px;margin-bottom:6px;font-size:15px;line-height:1.45;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;transition:box-shadow .15s}
+.card:hover{box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.card .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.col[data-status="done"] .card .t{color:var(--muted);text-decoration:line-through;text-decoration-color:#ccc}
+.card .x{flex:none;background:none;border:0;color:#bbb;font:400 16px/1 Inter,sans-serif;padding:2px 2px 0;cursor:pointer;opacity:0;transition:opacity .15s,color .15s}
+.card:hover .x,.card .x:focus-visible{opacity:1}
+.card .x:hover{color:var(--accent)}
+.card.ghost{opacity:.35}
+.card.lift{position:fixed;z-index:40;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.12);transform:rotate(1.5deg);cursor:grabbing;margin:0}
+.slot{height:4px;margin:-1px 4px 5px;border-radius:2px;background:var(--accent)}
+body.dragging{cursor:grabbing}
+
+.status{font-size:12px;color:#aaa;margin-top:18px;min-height:18px}
+
+@media (max-width:760px){
+  .tracker h1{margin-top:32px}
+  .board{grid-template-columns:1fr;gap:24px}
+  .list{min-height:64px}
+  .card .x{opacity:1;color:#aaa}
+}

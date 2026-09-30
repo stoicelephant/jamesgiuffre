@@ -1,9 +1,30 @@
 {
   "cleanUrls": true,
   "redirects": [
-    { "source": "/team", "destination": "/invoice#team", "permanent": false }
+    {
+      "source": "/team",
+      "destination": "/invoice#team",
+      "permanent": false
+    }
   ],
   "headers": [
-    { "source": "/invoice", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+    {
+      "source": "/invoice",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/tracker",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
   ]
 }

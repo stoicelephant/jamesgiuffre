@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tracker · james giuffre</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="tracker.css">
+</head>
+<body>
+<div class="page">
+  <main class="tracker">
+    <a class="back" href="/">← home</a>
+    <h1>tracker</h1>
+
+    <form id="add" class="add" autocomplete="off">
+      <input id="add-title" type="text" placeholder="add a task…" maxlength="300" aria-label="new task">
+      <button type="submit">add</button>
+    </form>
+
+    <p class="progress"><span id="progress-text">nothing yet</span><span class="bar"><span id="progress-fill"></span></span></p>
+
+    <div class="board">
+      <section class="col" data-status="todo">
+        <h2>not started <span class="n"></span></h2>
+        <ul class="list"></ul>
+      </section>
+      <section class="col" data-status="doing">
+        <h2>in progress <span class="n"></span></h2>
+        <ul class="list"></ul>
+      </section>
+      <section class="col" data-status="done">
+        <h2>complete <span class="n"></span></h2>
+        <ul class="list"></ul>
+      </section>
+    </div>
+
+    <p class="status" id="save-status" role="status"></p>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="/">home</a>
+    </nav>
+    <span>©<span class="yr">2026</span> made by james</span>
+  </footer>
+</div>
+<script src="site.js"></script>
+<script src="tracker.js"></script>
+</body>
+</html>
