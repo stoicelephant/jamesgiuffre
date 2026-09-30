@@ -45,6 +45,12 @@ footer a:hover,.dd summary:hover,.dd[open] summary{color:var(--fg)}
 .menu a:hover{background:#f6f6f6}
 .menu .soon{opacity:.6}
 
+/* the little tree next to "made by james" (our secret) */
+.sig{display:inline-flex;align-items:center;gap:8px}
+footer a.secret{display:inline-flex;color:#c4c4c4;transition:color .25s,transform .25s}
+footer a.secret:hover,footer a.secret:focus-visible{color:var(--accent);transform:scale(1.15)}
+.secret svg{display:block}
+
 /* project pages */
 .project{max-width:680px;width:100%;flex:1}
 .back{font-size:14px;font-weight:400;color:var(--muted);text-decoration:none}
