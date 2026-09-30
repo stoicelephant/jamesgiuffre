@@ -8,7 +8,7 @@
 .prompt .dollar{color:var(--accent)}
 .caret{display:inline-block;width:7px;height:14px;margin-left:2px;vertical-align:-2px;background:var(--accent);animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-.treepage h1{font-size:16px;font-weight:500;margin:44px 0 32px}
+.treepage h1{font-size:16px;font-weight:500;margin:44px 0 6px}
 .sub{color:var(--muted);max-width:520px;margin-bottom:28px}
 
 /* the tree */
@@ -47,7 +47,8 @@
 .count{font:400 12px/1.4 "JetBrains Mono",ui-monospace,Menlo,monospace;color:#aaa;margin-top:28px}
 
 @media (max-width:760px){
-  .treepage h1{margin:32px 0 24px}
+  .treepage h1{margin-top:32px}
+  .sub{margin-bottom:24px}
 }
 .narrow .node .note{display:none}
 @media (prefers-reduced-motion:reduce){
