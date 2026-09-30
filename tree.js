@@ -66,7 +66,9 @@
   // ---- layout ----
   function layout() {
     var W = stage.clientWidth;
-    all.forEach(function (n) { n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; });
+    function measure() { all.forEach(function (n) { n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; }); }
+    stage.classList.remove('narrow');
+    measure();
     var colX = [0], maxW = [], sumW = 0;
     for (var d = 0; d <= maxDepth; d++) { maxW[d] = Math.max.apply(null, all.filter(function (n) { return n.depth === d; }).map(function (n) { return n.w; })); sumW += maxW[d]; }
     // branches stretch to use the width (long, lazy curves on big screens), but never shorter than 76px
@@ -90,7 +92,9 @@
         e.d = 'M' + ax + ',' + ay + ' C' + (ax + k) + ',' + ay + ' ' + (bx - k) + ',' + by + ' ' + bx + ',' + by;
       });
     } else {
-      // phone: indented rows, like the `tree` command
+      // phone / narrow window: indented rows, like the `tree` command (descriptions hidden)
+      stage.classList.add('narrow');
+      measure();
       var IND = 26, yy = 0;
       all.forEach(function (n) {           // `all` is already in pre-order
         if (n.depth === 1 && n !== SITE.kids[0]) yy += 10;
@@ -178,7 +182,10 @@
   function start() {
     layout(); grow();
     if (!still) setTimeout(function () { requestAnimationFrame(frame); }, maxDepth * 380 + 900);
-    var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(layout, 80); });
+    var rt, again = function () { clearTimeout(rt); rt = setTimeout(layout, 80); };
+    window.addEventListener('resize', again);
+    // re-lay out if a card changes size later (e.g. the web font finishes loading)
+    if (window.ResizeObserver) { var ro = new ResizeObserver(again); all.forEach(function (n) { ro.observe(n.el); }); }
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else window.addEventListener('load', start);
 })();

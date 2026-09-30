@@ -49,8 +49,8 @@
 @media (max-width:760px){
   .prompt{margin-top:32px}
   .sub{margin-bottom:24px}
-  .node .note{display:none}
 }
+.narrow .node .note{display:none}
 @media (prefers-reduced-motion:reduce){
   .caret,.node.root .led{animation:none}
   .spark{display:none}
