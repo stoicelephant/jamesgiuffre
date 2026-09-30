@@ -4,23 +4,9 @@
   // ---- the site. add a page here and it grows a new branch. ----
   var SITE = {
     name: 'jamesgiuffre.com', path: '/', href: '/', kids: [
-      { name: 'lights', path: '/lights', href: '/lights', note: 'music-reactive lights, down to the pcb', kids: [
-        { name: 'see it run', href: '/lights' },
-        { name: 'the build', href: '/lights' },
-        { name: 'the room', href: '/lights' }
-      ] },
-      { name: 'invoice', path: '/invoice', href: '/invoice', note: 'fomo team hours + expenses', tag: 'team', kids: [
-        { name: 'overview', path: '#overview', href: '/invoice#overview' },
-        { name: 'time', path: '#time', href: '/invoice#time' },
-        { name: 'expenses', path: '#expenses', href: '/invoice#expenses' },
-        { name: 'approvals', path: '#approvals', href: '/invoice#approvals' },
-        { name: 'team', path: '/team', href: '/team' }
-      ] },
-      { name: 'tracker', path: '/tracker', href: '/tracker', note: 'tasks, time, links + media', tag: 'locked', kids: [
-        { name: 'not started', href: '/tracker' },
-        { name: 'in progress', href: '/tracker' },
-        { name: 'complete', href: '/tracker' }
-      ] },
+      { name: 'lights', path: '/lights', href: '/lights', note: 'music-reactive lights, down to the pcb' },
+      { name: 'invoice', path: '/invoice', href: '/invoice', note: 'fomo team hours + expenses', tag: 'team' },
+      { name: 'tracker', path: '/tracker', href: '/tracker', note: 'tasks, time, links + media', tag: 'locked' },
       { name: 'tree', path: '/tree', href: '/tree', note: 'this page', tag: 'you are here', here: true }
     ]
   };
@@ -174,9 +160,7 @@
   if (still) typed.textContent = cmd;
   else (function type(i) { typed.textContent = cmd.slice(0, i); if (i < cmd.length) setTimeout(function () { type(i + 1); }, 45 + Math.random() * 40); })(0);
 
-  var pages = all.filter(function (n) { return n.depth <= 1; }).length;
-  var secs = all.length - pages;
-  document.getElementById('count').textContent = pages + ' pages, ' + secs + ' sections';
+  document.getElementById('count').textContent = all.length + ' pages';
 
   // ---- go ----
   function start() {
