@@ -10,7 +10,7 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '.to-tree-bar{display:flex;justify-content:center;padding:14px 16px 0;position:relative;z-index:45}' +
+    '.to-tree-bar{display:flex;justify-content:center;padding:14px 16px 0;position:relative;z-index:45;overflow-anchor:none}' +
     '.to-tree{display:inline-flex;align-items:center;gap:8px;' +
     'font:500 14px/1 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:.01em;color:#fff;text-decoration:none;' +
     'background:#b4472c;border:1px solid #b4472c;border-radius:999px;padding:10px 18px 10px 14px;' +
@@ -37,4 +37,11 @@
   bar.className = 'to-tree-bar';
   bar.appendChild(a);
   document.body.insertBefore(bar, document.body.firstChild);
+
+  // the browser can keep the old scroll position (or anchor to content) and hide the new row above the fold,
+  // so start at the very top while the page settles
+  var top = function () { if (window.scrollY > 0 && window.scrollY <= bar.offsetHeight + 4) window.scrollTo(0, 0); };
+  top();
+  [60, 250, 700].forEach(function (ms) { setTimeout(top, ms); });
+  window.addEventListener('load', top);
 })();
