@@ -6,6 +6,7 @@
   var ctx = canvas.getContext('2d');
   var COLS = 56, ROWS = 42;
   var S = 32 / COLS;                        // keeps the motion the same at any resolution
+  var SPEED = 0.4;                          // < 1 slows the whole thing down (1 = the old, busier pace)
   var BPM = 124, beatLen = 60 / BPM;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -56,23 +57,23 @@
   // column height 0..1, shaped like a spectrum with a kick on every beat
   function level(c, t) {
     var beat = (t % beatLen) / beatLen;
-    var kick = Math.exp(-beat * 6);
+    var kick = Math.exp(-beat * 3.5);                     // softer, longer beat instead of a sharp hit
     var x = c / (COLS - 1);
     var base = 0.55 - 0.3 * x;                               // more bass than treble
     var wob = 0.18 * Math.sin(t * 2.1 + c * S * 0.55)
             + 0.12 * Math.sin(t * 3.7 - c * S * 0.9)
             + 0.08 * Math.sin(t * 7.3 + c * S * 1.7);
-    var k = kick * (0.35 - 0.2 * x);
+    var k = kick * (0.22 - 0.12 * x);
     return Math.max(0.06, Math.min(1, base + wob + k));
   }
 
   function draw(now) {
-    var t = (now - start) / 1000;
+    var real = (now - start) / 1000, t = real * SPEED;   // t drives the music, real drives the hover ripples
     color += (colorTarget - color) * 0.08;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    ripples = ripples.filter(function (r) { return t - r.t0 < 1.4; });
+    ripples = ripples.filter(function (r) { return real - r.t0 < 1.4; });
     var rad = cell * 0.38;
 
     for (var c = 0; c < COLS; c++) {
@@ -86,7 +87,7 @@
         // ripples add light
         var boost = 0;
         for (var i = 0; i < ripples.length; i++) {
-          var rp = ripples[i], age = t - rp.t0;
+          var rp = ripples[i], age = real - rp.t0;
           var d = Math.hypot(cx - rp.x, cy - rp.y) - age * cell * 24;
           boost += Math.max(0, 1 - Math.abs(d) / (cell * 1.3)) * (1 - age / 1.4);
         }
