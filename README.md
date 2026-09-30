@@ -4,7 +4,7 @@ Static personal site. No build step: the files in this folder are the site.
 
 - `index.html`: landing page
 - `lights.html`: lights project page
-- `tree.html`: site map at /tree, drawn from the page list at the top of `tree.js` (add new pages there)
+- `tree.html`: site map at /tree, drawn from the page list at the top of `tree.js` (add new pages there). `totree.js` puts a "← tree" button on a page you opened from the tree
 - `tracker.html`: private task board at /tracker (`tracker.js`, `tracker.css`, saved via `api/tasks.js`). Password comes from the `TRACKER_PASSWORD` env var in Vercel. Task photos/videos are stored in chunks via `api/task-files.js`
 - `style.css`, `leds.js` (LED panel animation), `site.js`, `favicon.svg`
 

@@ -23,9 +23,11 @@
     n.depth = depth; n.parent = parent; n.kids = n.kids || [];
     all.push(n);
     var a = document.createElement('a');
-    a.className = 'node' + (depth === 0 ? ' root' : n.kids.length || depth === 1 ? '' : ' leaf');
+    a.className = 'node' + (depth === 0 ? ' root' : depth === 1 ? ' branch' : ' leaf');
     a.href = n.href;
     if (n.here) a.setAttribute('aria-current', 'page');
+    // the page you land on shows a "← tree" button to come back (see totree.js)
+    a.addEventListener('click', function () { try { sessionStorage.setItem('tree.from', n.href.split('#')[0]); } catch (e) {} });
     var html = '';
     if (depth === 0) html += '<span class="led"></span>';
     var inner = '<span class="nm"></span>' + (n.path ? ' <span class="pt"></span>' : '');
@@ -52,31 +54,36 @@
   // ---- layout ----
   function layout() {
     var W = stage.clientWidth;
+    stage.style.height = '';
+    var availH = Math.max(stage.clientHeight, 320);   // .stage flexes to fill the rest of the screen
     function measure() { all.forEach(function (n) { n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; }); }
     stage.classList.remove('narrow');
     measure();
     var colX = [0], maxW = [], sumW = 0;
     for (var d = 0; d <= maxDepth; d++) { maxW[d] = Math.max.apply(null, all.filter(function (n) { return n.depth === d; }).map(function (n) { return n.w; })); sumW += maxW[d]; }
-    // branches stretch to use the width (long, lazy curves on big screens), but never shorter than 76px
-    var GAP = Math.max(76, Math.min(240, (W * 0.92 - sumW) / maxDepth));
+    // branches stretch across the screen (long, lazy curves on big screens), never shorter than 76px
+    var GAP = Math.max(76, Math.min(360, (W * 0.78 - sumW) / maxDepth));
     for (d = 1; d <= maxDepth; d++) colX[d] = colX[d - 1] + maxW[d - 1] + GAP;
-    var wide = colX[maxDepth] + maxW[maxDepth] <= W;
-    var H;
+    var treeW = colX[maxDepth] + maxW[maxDepth];
+    var wide = treeW <= W;
+    var H, offX = 0, offY = 0;
 
     if (wide) {
-      // leaves stack top to bottom; each parent sits at the middle of its children
+      // leaves spread out to fill the height; each parent sits at the middle of its children
+      var leaves = all.filter(function (n) { return !n.kids.length; });
+      var leafH = leaves.reduce(function (a, n) { return a + n.h; }, 0);
+      var gapY = leaves.length > 1 ? Math.max(14, Math.min(64, (availH * 0.8 - leafH) / (leaves.length - 1))) : 0;
       var y = 0;
       (function place(n) {
         n.x = colX[n.depth];
-        if (!n.kids.length) { n.y = y + n.h / 2; y += n.h + 6; return; }
-        n.kids.forEach(function (k, i) { if (n.depth === 0 && i) y += 16; place(k); });
+        if (!n.kids.length) { n.y = y + n.h / 2; y += n.h + gapY; return; }
+        n.kids.forEach(place);
         n.y = (n.kids[0].y + n.kids[n.kids.length - 1].y) / 2;
       })(SITE);
-      H = y - 6;
-      edges.forEach(function (e) {
-        var ax = e.from.x + e.from.w, ay = e.from.y, bx = e.to.x, by = e.to.y, k = (bx - ax) * 0.55;
-        e.d = 'M' + ax + ',' + ay + ' C' + (ax + k) + ',' + ay + ' ' + (bx - k) + ',' + by + ' ' + bx + ',' + by;
-      });
+      H = y - gapY;
+      offX = Math.max(0, (W - treeW) / 2);
+      offY = Math.max(0, (availH - H) / 2);
+      H = Math.max(H, availH);
     } else {
       // phone / narrow window: indented rows, like the `tree` command (descriptions hidden)
       stage.classList.add('narrow');
@@ -87,11 +94,17 @@
         n.x = n.depth * IND; n.y = yy + n.h / 2; yy += n.h + 8;
       });
       H = yy - 8;
-      edges.forEach(function (e) {
-        var sx = e.from.x + 12, sy = e.from.y + e.from.h / 2, bx = e.to.x, by = e.to.y, r = 8;
-        e.d = 'M' + sx + ',' + sy + ' V' + (by - r) + ' Q' + sx + ',' + by + ' ' + (sx + r) + ',' + by + ' H' + bx;
-      });
     }
+    all.forEach(function (n) { n.x += offX; n.y += offY; });
+    edges.forEach(function (e) {
+      if (wide) {
+        var ax = e.from.x + e.from.w, ay = e.from.y, bx = e.to.x, by = e.to.y, k = (bx - ax) * 0.55;
+        e.d = 'M' + ax + ',' + ay + ' C' + (ax + k) + ',' + ay + ' ' + (bx - k) + ',' + by + ' ' + bx + ',' + by;
+      } else {
+        var sx = e.from.x + 12, sy = e.from.y + e.from.h / 2, cx = e.to.x, cy = e.to.y, r = 8;
+        e.d = 'M' + sx + ',' + sy + ' V' + (cy - r) + ' Q' + sx + ',' + cy + ' ' + (sx + r) + ',' + cy + ' H' + cx;
+      }
+    });
 
     stage.style.height = H + 'px';
     all.forEach(function (n) { n.el.style.transform = 'translate(' + Math.round(n.x) + 'px,' + Math.round(n.y - n.h / 2) + 'px)'; });
